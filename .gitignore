@@ -1,0 +1,17 @@
+# Node / Bun
+node_modules/
+dist/
+build/
+.vite/
+*.log
+
+# Env / 機密
+.env
+.env.local
+.env.*.local
+
+# OS / 編輯器
+.DS_Store
+.vscode/
+.idea/
+*.swp

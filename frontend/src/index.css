@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 210 40% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 40% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 40% 11%;
+
+    --primary: 205 75% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 200 25% 94%;
+    --secondary-foreground: 210 40% 11%;
+
+    --muted: 210 20% 95%;
+    --muted-foreground: 210 15% 46%;
+
+    --accent: 180 45% 92%;
+    --accent-foreground: 200 60% 25%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 205 75% 42%;
+
+    --radius: 0.375rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 40% 11%;
+    --sidebar-primary: 205 75% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 200 25% 94%;
+    --sidebar-accent-foreground: 210 40% 11%;
+    --sidebar-border: 210 20% 90%;
+    --sidebar-ring: 205 75% 42%;
+
+    /* Medical module colors */
+    --module-patient: 205 75% 42%;
+    --module-disease: 280 55% 55%;
+    --module-lab: 160 50% 40%;
+    --module-specimen: 30 70% 50%;
+
+    --success: 150 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 40 90% 50%;
+    --warning-foreground: 30 80% 15%;
+    --info: 205 75% 42%;
+    --info-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 210 40% 7%;
+    --foreground: 210 20% 92%;
+
+    --card: 210 35% 10%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 210 35% 10%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 205 70% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 30% 18%;
+    --secondary-foreground: 210 20% 92%;
+
+    --muted: 210 30% 15%;
+    --muted-foreground: 210 15% 60%;
+
+    --accent: 180 30% 18%;
+    --accent-foreground: 180 40% 75%;
+
+    --destructive: 0 62% 35%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 25% 18%;
+    --input: 210 25% 18%;
+    --ring: 205 70% 50%;
+
+    --sidebar-background: 210 35% 9%;
+    --sidebar-foreground: 210 20% 92%;
+    --sidebar-primary: 205 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 30% 15%;
+    --sidebar-accent-foreground: 210 20% 92%;
+    --sidebar-border: 210 25% 15%;
+    --sidebar-ring: 205 70% 50%;
+
+    --module-patient: 205 70% 50%;
+    --module-disease: 280 50% 60%;
+    --module-lab: 160 45% 50%;
+    --module-specimen: 30 65% 55%;
+
+    --success: 150 55% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 40 85% 55%;
+    --warning-foreground: 30 80% 15%;
+    --info: 205 70% 50%;
+    --info-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Noto Sans TC', system-ui, sans-serif;
+  }
+
+  /* Compact table styles for medical data */
+  .medical-table th,
+  .medical-table td {
+    @apply text-xs px-2 py-1.5;
+  }
+
+  .medical-table th {
+    @apply bg-muted/60 font-medium text-muted-foreground sticky top-0 z-10;
+  }
+
+  .medical-table tr:hover td {
+    @apply bg-accent/30;
+  }
+
+  /* Scrollbar styling */
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+
+  /* Mono font for medical values */
+  .font-mono-medical {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+  }
+}
