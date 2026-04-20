@@ -3,7 +3,11 @@ import { Copy, Check, Calendar, Dna, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Patient, ModuleId } from '@/types/medical';
 
 function calcAge(birthday: string): number {
@@ -21,10 +25,18 @@ function CopyButton({ text }: { text: string }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <button
-          onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-          className="inline-flex items-center text-muted-foreground hover:text-foreground ml-1"
+          onClick={() => {
+            navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          }}
+          className="ml-1 inline-flex items-center text-muted-foreground hover:text-foreground"
         >
-          {copied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+          {copied ? (
+            <Check className="h-3 w-3 text-emerald-600" />
+          ) : (
+            <Copy className="h-3 w-3" />
+          )}
         </button>
       </TooltipTrigger>
       <TooltipContent className="text-xs">複製病歷號</TooltipContent>
@@ -41,9 +53,11 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
   const age = calcAge(patient.birthday);
   const hasDna = patient.dnabank.length > 0;
   const hasOutbank = patient.outbank.length > 0;
-  const lastVisit = patient.opd.length > 0
-    ? patient.opd.sort((a, b) => b.visitDate.localeCompare(a.visitDate))[0].visitDate
-    : null;
+  const lastVisit =
+    patient.opd.length > 0
+      ? patient.opd.sort((a, b) => b.visitDate.localeCompare(a.visitDate))[0]
+          .visitDate
+      : null;
 
   const jumpLinks: { label: string; moduleId: ModuleId; count: number }[] = [
     { label: '門診', moduleId: 'opd', count: patient.opd.length },
@@ -60,14 +74,16 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
           {/* Left: Main info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-lg font-bold text-foreground">{patient.name}</h2>
-              <div className="flex items-center gap-1 font-mono-medical text-muted-foreground">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex items-center gap-3">
+              <h2 className="text-lg font-bold text-foreground">
+                {patient.name}
+              </h2>
+              <div className="font-mono-medical flex items-center gap-1 text-muted-foreground">
                 <span>{patient.chartno}</span>
                 <CopyButton text={patient.chartno} />
               </div>
-              <Badge variant="outline" className="text-[10px] h-5">
+              <Badge variant="outline" className="h-5 text-[10px]">
                 {patient.sex}
               </Badge>
               <span className="text-xs text-muted-foreground">
@@ -76,41 +92,41 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
             </div>
 
             {/* Diagnoses */}
-            <div className="space-y-0.5 mb-3">
+            <div className="mb-3 space-y-0.5">
               <div className="text-xs">
-                <span className="text-muted-foreground mr-1.5">主診斷</span>
+                <span className="mr-1.5 text-muted-foreground">主診斷</span>
                 <span className="font-medium">{patient.diagnosis}</span>
               </div>
               {patient.diagnosis2 && (
                 <div className="text-xs">
-                  <span className="text-muted-foreground mr-1.5">次診斷</span>
+                  <span className="mr-1.5 text-muted-foreground">次診斷</span>
                   <span>{patient.diagnosis2}</span>
                 </div>
               )}
               {patient.diagnosis3 && (
                 <div className="text-xs">
-                  <span className="text-muted-foreground mr-1.5">次診斷</span>
+                  <span className="mr-1.5 text-muted-foreground">次診斷</span>
                   <span>{patient.diagnosis3}</span>
                 </div>
               )}
             </div>
 
             {/* Status badges */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               {hasDna && (
-                <Badge variant="secondary" className="text-[10px] h-5 gap-1">
+                <Badge variant="secondary" className="h-5 gap-1 text-[10px]">
                   <Dna className="h-3 w-3" />
                   DNA 樣本 {patient.dnabank.length} 筆
                 </Badge>
               )}
               {hasOutbank && (
-                <Badge variant="secondary" className="text-[10px] h-5 gap-1">
+                <Badge variant="secondary" className="h-5 gap-1 text-[10px]">
                   <ExternalLink className="h-3 w-3" />
                   外送檢體 {patient.outbank.length} 筆
                 </Badge>
               )}
               {lastVisit && (
-                <Badge variant="secondary" className="text-[10px] h-5 gap-1">
+                <Badge variant="secondary" className="h-5 gap-1 text-[10px]">
                   <Calendar className="h-3 w-3" />
                   最近門診 {lastVisit}
                 </Badge>
@@ -119,18 +135,20 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
           </div>
 
           {/* Right: Quick jumps */}
-          <div className="flex flex-wrap gap-1 max-w-[240px] justify-end">
-            {jumpLinks.filter(l => l.count > 0).map((link) => (
-              <Button
-                key={link.moduleId}
-                variant="outline"
-                size="sm"
-                className="h-6 text-[10px] px-2"
-                onClick={() => onJumpTo(link.moduleId)}
-              >
-                {link.label} ({link.count})
-              </Button>
-            ))}
+          <div className="flex max-w-[240px] flex-wrap justify-end gap-1">
+            {jumpLinks
+              .filter((l) => l.count > 0)
+              .map((link) => (
+                <Button
+                  key={link.moduleId}
+                  variant="outline"
+                  size="sm"
+                  className="h-6 px-2 text-[10px]"
+                  onClick={() => onJumpTo(link.moduleId)}
+                >
+                  {link.label} ({link.count})
+                </Button>
+              ))}
           </div>
         </div>
       </CardContent>
@@ -146,19 +164,27 @@ interface PatientListProps {
 export function PatientList({ patients, onSelect }: PatientListProps) {
   return (
     <div className="space-y-2">
-      <p className="text-sm text-muted-foreground">找到 {patients.length} 位病人，請選擇：</p>
+      <p className="text-sm text-muted-foreground">
+        找到 {patients.length} 位病人，請選擇：
+      </p>
       {patients.map((p) => (
         <button
           key={p.chartno}
           onClick={() => onSelect(p)}
-          className="w-full text-left p-3 rounded-md border border-border bg-card hover:bg-accent/50 transition-colors"
+          className="w-full rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-accent/50"
         >
           <div className="flex items-center gap-3">
-            <span className="font-semibold text-sm">{p.name}</span>
-            <span className="font-mono-medical text-xs text-muted-foreground">{p.chartno}</span>
-            <Badge variant="outline" className="text-[10px] h-4">{p.sex}</Badge>
+            <span className="text-sm font-semibold">{p.name}</span>
+            <span className="font-mono-medical text-xs text-muted-foreground">
+              {p.chartno}
+            </span>
+            <Badge variant="outline" className="h-4 text-[10px]">
+              {p.sex}
+            </Badge>
             <span className="text-xs text-muted-foreground">{p.birthday}</span>
-            <span className="text-xs text-muted-foreground ml-auto truncate max-w-[300px]">{p.diagnosis}</span>
+            <span className="ml-auto max-w-[300px] truncate text-xs text-muted-foreground">
+              {p.diagnosis}
+            </span>
           </div>
         </button>
       ))}

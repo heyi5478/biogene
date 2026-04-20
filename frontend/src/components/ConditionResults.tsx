@@ -2,7 +2,14 @@ import React from 'react';
 import { ArrowLeft, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Patient,
   ConditionRow,
@@ -39,56 +46,76 @@ export function ConditionResults({
     .filter((c) => c.moduleId && c.fieldId)
     .map((c) => {
       const mod = MODULE_DEFINITIONS.find((m) => m.id === c.moduleId);
-      const field = c.moduleId ? MODULE_FIELDS[c.moduleId as keyof typeof MODULE_FIELDS]?.find((f) => f.id === c.fieldId) : null;
+      const field = c.moduleId
+        ? MODULE_FIELDS[c.moduleId as keyof typeof MODULE_FIELDS]?.find(
+            (f) => f.id === c.fieldId,
+          )
+        : null;
       return `${mod?.code || c.moduleId} / ${field?.label || c.fieldId} ${c.operator} ${c.value}${c.value2 ? `~${c.value2}` : ''}`;
     });
 
   return (
     <div className="space-y-3">
       {/* Condition summary */}
-      <div className="flex items-center gap-2 flex-wrap px-1 py-2 text-xs">
+      <div className="flex flex-wrap items-center gap-2 px-1 py-2 text-xs">
         <span className="text-muted-foreground">
-          條件查詢（{logic}）· 命中 <span className="font-medium text-foreground">{matchedPatients.length}</span> 位病人
+          條件查詢（{logic}）· 命中{' '}
+          <span className="font-medium text-foreground">
+            {matchedPatients.length}
+          </span>{' '}
+          位病人
         </span>
         {conditionChips.map((chip, i) => (
-          <Badge key={i} variant="secondary" className="text-[10px] h-5">
+          <Badge key={i} variant="secondary" className="h-5 text-[10px]">
             {chip}
           </Badge>
         ))}
       </div>
 
       {matchedPatients.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-[40vh] text-center">
-          <h3 className="text-base font-semibold text-foreground mb-1">找不到符合條件的病人</h3>
+        <div className="flex h-[40vh] flex-col items-center justify-center text-center">
+          <h3 className="mb-1 text-base font-semibold text-foreground">
+            找不到符合條件的病人
+          </h3>
           <p className="text-sm text-muted-foreground">
             請嘗試放寬條件或切換邏輯為 OR。
           </p>
         </div>
       ) : (
-        <div className="rounded-md border border-border overflow-hidden">
+        <div className="overflow-hidden rounded-md border border-border">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="text-xs h-8 w-[100px]">病歷號</TableHead>
-                <TableHead className="text-xs h-8 w-[80px]">姓名</TableHead>
-                <TableHead className="text-xs h-8 w-[40px]">性別</TableHead>
-                <TableHead className="text-xs h-8 w-[90px]">生日</TableHead>
-                <TableHead className="text-xs h-8">主診斷</TableHead>
-                <TableHead className="text-xs h-8">命中摘要</TableHead>
-                <TableHead className="text-xs h-8 w-[70px]">操作</TableHead>
+                <TableHead className="h-8 w-[100px] text-xs">病歷號</TableHead>
+                <TableHead className="h-8 w-[80px] text-xs">姓名</TableHead>
+                <TableHead className="h-8 w-[40px] text-xs">性別</TableHead>
+                <TableHead className="h-8 w-[90px] text-xs">生日</TableHead>
+                <TableHead className="h-8 text-xs">主診斷</TableHead>
+                <TableHead className="h-8 text-xs">命中摘要</TableHead>
+                <TableHead className="h-8 w-[70px] text-xs">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {matchedPatients.map(({ patient, hitSummary }) => (
                 <TableRow key={patient.chartno} className="hover:bg-accent/30">
-                  <TableCell className="text-xs font-mono">{patient.chartno}</TableCell>
-                  <TableCell className="text-xs font-medium">{patient.name}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {patient.chartno}
+                  </TableCell>
+                  <TableCell className="text-xs font-medium">
+                    {patient.name}
+                  </TableCell>
                   <TableCell className="text-xs">{patient.sex}</TableCell>
                   <TableCell className="text-xs">{patient.birthday}</TableCell>
-                  <TableCell className="text-xs truncate max-w-[200px]">{patient.diagnosis}</TableCell>
+                  <TableCell className="max-w-[200px] truncate text-xs">
+                    {patient.diagnosis}
+                  </TableCell>
                   <TableCell className="text-[10px] text-muted-foreground">
                     {hitSummary.map((s, i) => (
-                      <Badge key={i} variant="outline" className="text-[9px] h-4 mr-1 mb-0.5">
+                      <Badge
+                        key={i}
+                        variant="outline"
+                        className="mb-0.5 mr-1 h-4 text-[9px]"
+                      >
                         {s}
                       </Badge>
                     ))}
@@ -97,10 +124,10 @@ export function ConditionResults({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 text-[10px] px-2"
+                      className="h-6 px-2 text-[10px]"
                       onClick={() => onSelectPatient(patient)}
                     >
-                      <Eye className="h-3 w-3 mr-1" />
+                      <Eye className="mr-1 h-3 w-3" />
                       查看
                     </Button>
                   </TableCell>
@@ -118,7 +145,10 @@ export function ConditionResults({
 // Condition evaluation engine
 // ==========================================
 
-function getModuleData(patient: Patient, moduleId: string): Record<string, any>[] {
+function getModuleData(
+  patient: Patient,
+  moduleId: string,
+): Record<string, any>[] {
   switch (moduleId) {
     case 'basic':
       return [patient];
@@ -153,7 +183,10 @@ function getModuleData(patient: Patient, moduleId: string): Record<string, any>[
   }
 }
 
-function evalCondition(row: ConditionRow, records: Record<string, any>[]): boolean {
+function evalCondition(
+  row: ConditionRow,
+  records: Record<string, any>[],
+): boolean {
   if (!row.moduleId || !row.fieldId) return false;
 
   return records.some((rec) => {
@@ -169,7 +202,9 @@ function evalCondition(row: ConditionRow, records: Record<string, any>[]): boole
       case 'neq':
         return String(val) !== row.value;
       case 'contains':
-        return String(val ?? '').toLowerCase().includes(row.value.toLowerCase());
+        return String(val ?? '')
+          .toLowerCase()
+          .includes(row.value.toLowerCase());
       case 'gt':
         return Number(val) > Number(row.value);
       case 'gte':
@@ -191,11 +226,16 @@ function evalCondition(row: ConditionRow, records: Record<string, any>[]): boole
   });
 }
 
-function getHitSummary(row: ConditionRow, records: Record<string, any>[]): string | null {
+function getHitSummary(
+  row: ConditionRow,
+  records: Record<string, any>[],
+): string | null {
   if (!row.moduleId || !row.fieldId) return null;
   const mod = MODULE_DEFINITIONS.find((m) => m.id === row.moduleId);
-  const field = MODULE_FIELDS[row.moduleId as keyof typeof MODULE_FIELDS]?.find((f) => f.id === row.fieldId);
-  
+  const field = MODULE_FIELDS[row.moduleId as keyof typeof MODULE_FIELDS]?.find(
+    (f) => f.id === row.fieldId,
+  );
+
   const matchedRec = records.find((rec) => {
     const val = rec[row.fieldId];
     if (val === undefined || val === null) return false;
@@ -210,7 +250,7 @@ function getHitSummary(row: ConditionRow, records: Record<string, any>[]): strin
 export function evaluateConditions(
   patients: Patient[],
   conditions: ConditionRow[],
-  logic: ConditionLogic
+  logic: ConditionLogic,
 ): MatchedPatient[] {
   const validConditions = conditions.filter((c) => c.moduleId && c.fieldId);
   if (validConditions.length === 0) return [];
@@ -234,7 +274,9 @@ export function evaluateConditions(
 
       return {
         patient,
-        hitSummary: results.filter((r) => r.match && r.summary).map((r) => r.summary!),
+        hitSummary: results
+          .filter((r) => r.match && r.summary)
+          .map((r) => r.summary!),
       };
     })
     .filter(Boolean) as MatchedPatient[];

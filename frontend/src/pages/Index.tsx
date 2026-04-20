@@ -6,15 +6,34 @@ import { FilterPanel, QueryMode } from '@/components/FilterPanel';
 import { PatientSummary, PatientList } from '@/components/PatientSummary';
 import { SearchSummary } from '@/components/SearchSummary';
 import { ResultModules } from '@/components/ResultModules';
-import { ConditionResults, evaluateConditions } from '@/components/ConditionResults';
+import {
+  ConditionResults,
+  evaluateConditions,
+} from '@/components/ConditionResults';
 import { mockPatients } from '@/data/mockData';
-import { ModuleId, Patient, ConditionRow, ConditionLogic } from '@/types/medical';
+import {
+  ModuleId,
+  Patient,
+  ConditionRow,
+  ConditionLogic,
+} from '@/types/medical';
 
 const tabModuleMap: Record<string, ModuleId[]> = {
   all: [],
   basic: ['basic'],
   opd: ['opd'],
-  lab: ['aa', 'msms', 'biomarker', 'aadc', 'ald', 'mma', 'mps2', 'lsd', 'enzyme', 'gag'],
+  lab: [
+    'aa',
+    'msms',
+    'biomarker',
+    'aadc',
+    'ald',
+    'mma',
+    'mps2',
+    'lsd',
+    'enzyme',
+    'gag',
+  ],
   specimen: ['dnabank', 'outbank'],
 };
 
@@ -33,7 +52,9 @@ const Index = () => {
   const [conditions, setConditions] = useState<ConditionRow[]>([]);
   const [conditionLogic, setConditionLogic] = useState<ConditionLogic>('AND');
   const [conditionSubmitted, setConditionSubmitted] = useState(false);
-  const [conditionPatient, setConditionPatient] = useState<Patient | null>(null);
+  const [conditionPatient, setConditionPatient] = useState<Patient | null>(
+    null,
+  );
 
   // Patient query handlers
   const handleSearch = useCallback(() => {
@@ -42,17 +63,18 @@ const Index = () => {
   }, [searchQuery]);
 
   const results = submittedQuery
-    ? mockPatients.filter(p =>
-        p.name.includes(submittedQuery) ||
-        p.chartno.toLowerCase().includes(submittedQuery.toLowerCase())
+    ? mockPatients.filter(
+        (p) =>
+          p.name.includes(submittedQuery) ||
+          p.chartno.toLowerCase().includes(submittedQuery.toLowerCase()),
       )
     : [];
 
-  const displayPatient = selectedPatient || (results.length === 1 ? results[0] : null);
+  const displayPatient =
+    selectedPatient || (results.length === 1 ? results[0] : null);
 
-  const effectiveModules: ModuleId[] = activeTab !== 'all'
-    ? tabModuleMap[activeTab] || []
-    : selectedModules;
+  const effectiveModules: ModuleId[] =
+    activeTab !== 'all' ? tabModuleMap[activeTab] || [] : selectedModules;
 
   const handleClearAll = useCallback(() => {
     setSearchQuery('');
@@ -63,14 +85,16 @@ const Index = () => {
   }, []);
 
   const handleRemoveModule = useCallback((id: ModuleId) => {
-    setSelectedModules(prev => prev.filter(m => m !== id));
+    setSelectedModules((prev) => prev.filter((m) => m !== id));
   }, []);
 
   const handleJumpTo = useCallback((moduleId: ModuleId) => {
     setActiveTab('all');
     setSelectedModules([moduleId]);
     setTimeout(() => {
-      document.getElementById(`section-${moduleId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document
+        .getElementById(`section-${moduleId}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   }, []);
 
@@ -97,16 +121,20 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card px-6 py-3 shrink-0">
+      <header className="shrink-0 border-b border-border bg-card px-6 py-3">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
             <Database className="h-4 w-4 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-foreground leading-tight">基因醫學整合查詢中心</h1>
-            <p className="text-[11px] text-muted-foreground">依病人姓名或病歷號查詢，或以條件篩選病人主檔、門診、檢驗與檢體資料</p>
+            <h1 className="text-base font-bold leading-tight text-foreground">
+              基因醫學整合查詢中心
+            </h1>
+            <p className="text-[11px] text-muted-foreground">
+              依病人姓名或病歷號查詢，或以條件篩選病人主檔、門診、檢驗與檢體資料
+            </p>
           </div>
         </div>
       </header>
@@ -132,7 +160,7 @@ const Index = () => {
         />
 
         {/* Right Content */}
-        <main className="flex-1 overflow-y-auto thin-scrollbar p-4 space-y-3">
+        <main className="thin-scrollbar flex-1 space-y-3 overflow-y-auto p-4">
           {queryMode === 'patient' ? (
             <>
               {/* Search Summary */}
@@ -146,15 +174,17 @@ const Index = () => {
 
               {/* Empty state */}
               {!submittedQuery && (
-                <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <div className="flex h-[60vh] flex-col items-center justify-center text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                     <Search className="h-7 w-7 text-muted-foreground" />
                   </div>
-                  <h2 className="text-lg font-semibold text-foreground mb-1">開始查詢</h2>
-                  <p className="text-sm text-muted-foreground max-w-md">
+                  <h2 className="mb-1 text-lg font-semibold text-foreground">
+                    開始查詢
+                  </h2>
+                  <p className="max-w-md text-sm text-muted-foreground">
                     請在左側輸入病人姓名或病歷號，並選擇需要查看的資料模組，即可開始查詢。
                   </p>
-                  <p className="text-xs text-muted-foreground mt-3">
+                  <p className="mt-3 text-xs text-muted-foreground">
                     提示：可使用左側「快捷查詢」按鈕快速選取常用模組組合，或切換至「條件查詢」以欄位條件篩選病人
                   </p>
                 </div>
@@ -162,8 +192,10 @@ const Index = () => {
 
               {/* No results */}
               {submittedQuery && results.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-[40vh] text-center">
-                  <h3 className="text-base font-semibold text-foreground mb-1">找不到符合條件的病人</h3>
+                <div className="flex h-[40vh] flex-col items-center justify-center text-center">
+                  <h3 className="mb-1 text-base font-semibold text-foreground">
+                    找不到符合條件的病人
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     請確認病人姓名或病歷號是否正確，或嘗試其他搜尋條件。
                   </p>
@@ -178,17 +210,33 @@ const Index = () => {
               {/* Single / selected patient */}
               {displayPatient && (
                 <>
-                  <PatientSummary patient={displayPatient} onJumpTo={handleJumpTo} />
+                  <PatientSummary
+                    patient={displayPatient}
+                    onJumpTo={handleJumpTo}
+                  />
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="h-8">
-                      <TabsTrigger value="all" className="text-xs h-7">全部</TabsTrigger>
-                      <TabsTrigger value="basic" className="text-xs h-7">基本資料</TabsTrigger>
-                      <TabsTrigger value="opd" className="text-xs h-7">門診</TabsTrigger>
-                      <TabsTrigger value="lab" className="text-xs h-7">檢驗</TabsTrigger>
-                      <TabsTrigger value="specimen" className="text-xs h-7">檢體</TabsTrigger>
+                      <TabsTrigger value="all" className="h-7 text-xs">
+                        全部
+                      </TabsTrigger>
+                      <TabsTrigger value="basic" className="h-7 text-xs">
+                        基本資料
+                      </TabsTrigger>
+                      <TabsTrigger value="opd" className="h-7 text-xs">
+                        門診
+                      </TabsTrigger>
+                      <TabsTrigger value="lab" className="h-7 text-xs">
+                        檢驗
+                      </TabsTrigger>
+                      <TabsTrigger value="specimen" className="h-7 text-xs">
+                        檢體
+                      </TabsTrigger>
                     </TabsList>
                     <TabsContent value={activeTab} className="mt-3">
-                      <ResultModules patient={displayPatient} activeModules={effectiveModules} />
+                      <ResultModules
+                        patient={displayPatient}
+                        activeModules={effectiveModules}
+                      />
                     </TabsContent>
                   </Tabs>
                 </>
@@ -198,13 +246,16 @@ const Index = () => {
             /* Condition query mode */
             <>
               {!conditionSubmitted && !conditionPatient && (
-                <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <div className="flex h-[60vh] flex-col items-center justify-center text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                     <Search className="h-7 w-7 text-muted-foreground" />
                   </div>
-                  <h2 className="text-lg font-semibold text-foreground mb-1">條件查詢</h2>
-                  <p className="text-sm text-muted-foreground max-w-md">
-                    請在左側設定查詢條件（模組 + 欄位 + 運算子 + 值），或使用常用條件模板，即可篩選符合條件的病人。
+                  <h2 className="mb-1 text-lg font-semibold text-foreground">
+                    條件查詢
+                  </h2>
+                  <p className="max-w-md text-sm text-muted-foreground">
+                    請在左側設定查詢條件（模組 + 欄位 + 運算子 +
+                    值），或使用常用條件模板，即可篩選符合條件的病人。
                   </p>
                 </div>
               )}
@@ -226,22 +277,38 @@ const Index = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => setConditionPatient(null)}
-                    className="h-7 text-xs px-2 mb-1"
+                    className="mb-1 h-7 px-2 text-xs"
                   >
-                    <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                    <ArrowLeft className="mr-1 h-3.5 w-3.5" />
                     返回條件查詢結果
                   </Button>
-                  <PatientSummary patient={conditionPatient} onJumpTo={handleJumpTo} />
+                  <PatientSummary
+                    patient={conditionPatient}
+                    onJumpTo={handleJumpTo}
+                  />
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="h-8">
-                      <TabsTrigger value="all" className="text-xs h-7">全部</TabsTrigger>
-                      <TabsTrigger value="basic" className="text-xs h-7">基本資料</TabsTrigger>
-                      <TabsTrigger value="opd" className="text-xs h-7">門診</TabsTrigger>
-                      <TabsTrigger value="lab" className="text-xs h-7">檢驗</TabsTrigger>
-                      <TabsTrigger value="specimen" className="text-xs h-7">檢體</TabsTrigger>
+                      <TabsTrigger value="all" className="h-7 text-xs">
+                        全部
+                      </TabsTrigger>
+                      <TabsTrigger value="basic" className="h-7 text-xs">
+                        基本資料
+                      </TabsTrigger>
+                      <TabsTrigger value="opd" className="h-7 text-xs">
+                        門診
+                      </TabsTrigger>
+                      <TabsTrigger value="lab" className="h-7 text-xs">
+                        檢驗
+                      </TabsTrigger>
+                      <TabsTrigger value="specimen" className="h-7 text-xs">
+                        檢體
+                      </TabsTrigger>
                     </TabsList>
                     <TabsContent value={activeTab} className="mt-3">
-                      <ResultModules patient={conditionPatient} activeModules={effectiveModules} />
+                      <ResultModules
+                        patient={conditionPatient}
+                        activeModules={effectiveModules}
+                      />
                     </TabsContent>
                   </Tabs>
                 </>
