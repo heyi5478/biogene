@@ -124,11 +124,11 @@
   /* Compact table styles for medical data */
   .medical-table th,
   .medical-table td {
-    @apply text-xs px-2 py-1.5;
+    @apply px-2 py-1.5 text-xs;
   }
 
   .medical-table th {
-    @apply bg-muted/60 font-medium text-muted-foreground sticky top-0 z-10;
+    @apply sticky top-0 z-10 bg-muted/60 font-medium text-muted-foreground;
   }
 
   .medical-table tr:hover td {
@@ -144,7 +144,7 @@
     @apply bg-transparent;
   }
   .thin-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
+    @apply rounded-full bg-border;
   }
   .thin-scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground/40;

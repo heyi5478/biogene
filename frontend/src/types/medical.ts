@@ -1,8 +1,18 @@
 export type ModuleId =
-  | 'basic' | 'opd'
-  | 'aadc' | 'ald' | 'mma' | 'mps2'
-  | 'aa' | 'msms' | 'biomarker' | 'lsd' | 'enzyme' | 'gag'
-  | 'dnabank' | 'outbank';
+  | 'basic'
+  | 'opd'
+  | 'aadc'
+  | 'ald'
+  | 'mma'
+  | 'mps2'
+  | 'aa'
+  | 'msms'
+  | 'biomarker'
+  | 'lsd'
+  | 'enzyme'
+  | 'gag'
+  | 'dnabank'
+  | 'outbank';
 
 export interface ModuleInfo {
   id: ModuleId;
@@ -159,20 +169,118 @@ export interface OutbankRecord {
 }
 
 export const MODULE_DEFINITIONS: ModuleInfo[] = [
-  { id: 'basic', code: '基本資料', name: '基本資料', description: '病歷號、生日、性別、診斷等病人主檔資料', tooltip: '顯示病人基本主檔資訊', group: 'patient' },
-  { id: 'opd', code: 'OPD', name: '門診紀錄', description: '看診日、主診斷碼、主診斷名稱、次診斷等門診追蹤資料', tooltip: '顯示門診追蹤紀錄與診斷資訊', group: 'patient' },
-  { id: 'aadc', code: 'AADC', name: 'AADC 相關檢測', description: '查 AADC 模組樣本與濃度結果', tooltip: '顯示 AADC 模組樣本與濃度結果', group: 'disease' },
-  { id: 'ald', code: 'ALD', name: 'ALD 相關檢測', description: '查 ALD 模組樣本與濃度結果', tooltip: '顯示 ALD 模組樣本與濃度結果', group: 'disease' },
-  { id: 'mma', code: 'MMA', name: 'MMA 相關檢測', description: '查 MMA 模組樣本與濃度結果', tooltip: '顯示 MMA 模組樣本與濃度結果', group: 'disease' },
-  { id: 'mps2', code: 'MPS', name: 'MPS / 相關 target panel', description: '包含 MPS2、MPS4A、MPS6、TPP1 等 target', tooltip: '顯示 MPS2、MPS4A、MPS6、TPP1 等 target panel 結果', group: 'disease' },
-  { id: 'aa', code: 'AA', name: '胺基酸分析（AA）', description: '查胺基酸檢驗結果與個別 analyte 數值', tooltip: '顯示胺基酸分析結果與個別 analyte 數值，如 Gln、Citr', group: 'lab' },
-  { id: 'msms', code: 'MS/MS', name: '串聯質譜篩檢（MS/MS）', description: '查 MS/MS 篩檢結果與個別 analyte 資料', tooltip: '顯示串聯質譜篩檢與相關 analyte，如 Ala、Arg、Cit', group: 'lab' },
-  { id: 'biomarker', code: 'Biomarker', name: '生物標記（Biomarker）', description: '查 DBS / Plasma biomarker', tooltip: '顯示 DBS / Plasma biomarker，如 LysoGb3、LysoGL1', group: 'lab' },
-  { id: 'lsd', code: 'LSD', name: 'LSD 多重酵素 panel', description: '查 GAA、GLA、ABG、IDUA 等 panel', tooltip: '顯示 lysosomal storage disease 多重酵素 panel', group: 'lab' },
-  { id: 'enzyme', code: 'Enzyme', name: '酵素檢驗', description: '查酵素活性、檢體類別、技術人員與結果', tooltip: '顯示酵素活性檢驗結果', group: 'lab' },
-  { id: 'gag', code: 'GAG', name: 'GAG 定量', description: '查 GAG、Creatinine 及相關結果', tooltip: '顯示 GAG、Creatinine 定量結果，用於 MPS 評估', group: 'lab' },
-  { id: 'dnabank', code: 'DNAbank', name: 'DNA 檢體庫', description: '查 DNA 樣本編號、樣本類型、備註與管理資訊', tooltip: '顯示 DNA 樣本與檢體管理資訊', group: 'specimen' },
-  { id: 'outbank', code: 'Outbank', name: '外送檢體', description: '查外送檢體編號、送驗日期、assay 與結果', tooltip: '顯示外送檢體、送驗日期、assay 與結果', group: 'specimen' },
+  {
+    id: 'basic',
+    code: '基本資料',
+    name: '基本資料',
+    description: '病歷號、生日、性別、診斷等病人主檔資料',
+    tooltip: '顯示病人基本主檔資訊',
+    group: 'patient',
+  },
+  {
+    id: 'opd',
+    code: 'OPD',
+    name: '門診紀錄',
+    description: '看診日、主診斷碼、主診斷名稱、次診斷等門診追蹤資料',
+    tooltip: '顯示門診追蹤紀錄與診斷資訊',
+    group: 'patient',
+  },
+  {
+    id: 'aadc',
+    code: 'AADC',
+    name: 'AADC 相關檢測',
+    description: '查 AADC 模組樣本與濃度結果',
+    tooltip: '顯示 AADC 模組樣本與濃度結果',
+    group: 'disease',
+  },
+  {
+    id: 'ald',
+    code: 'ALD',
+    name: 'ALD 相關檢測',
+    description: '查 ALD 模組樣本與濃度結果',
+    tooltip: '顯示 ALD 模組樣本與濃度結果',
+    group: 'disease',
+  },
+  {
+    id: 'mma',
+    code: 'MMA',
+    name: 'MMA 相關檢測',
+    description: '查 MMA 模組樣本與濃度結果',
+    tooltip: '顯示 MMA 模組樣本與濃度結果',
+    group: 'disease',
+  },
+  {
+    id: 'mps2',
+    code: 'MPS',
+    name: 'MPS / 相關 target panel',
+    description: '包含 MPS2、MPS4A、MPS6、TPP1 等 target',
+    tooltip: '顯示 MPS2、MPS4A、MPS6、TPP1 等 target panel 結果',
+    group: 'disease',
+  },
+  {
+    id: 'aa',
+    code: 'AA',
+    name: '胺基酸分析（AA）',
+    description: '查胺基酸檢驗結果與個別 analyte 數值',
+    tooltip: '顯示胺基酸分析結果與個別 analyte 數值，如 Gln、Citr',
+    group: 'lab',
+  },
+  {
+    id: 'msms',
+    code: 'MS/MS',
+    name: '串聯質譜篩檢（MS/MS）',
+    description: '查 MS/MS 篩檢結果與個別 analyte 資料',
+    tooltip: '顯示串聯質譜篩檢與相關 analyte，如 Ala、Arg、Cit',
+    group: 'lab',
+  },
+  {
+    id: 'biomarker',
+    code: 'Biomarker',
+    name: '生物標記（Biomarker）',
+    description: '查 DBS / Plasma biomarker',
+    tooltip: '顯示 DBS / Plasma biomarker，如 LysoGb3、LysoGL1',
+    group: 'lab',
+  },
+  {
+    id: 'lsd',
+    code: 'LSD',
+    name: 'LSD 多重酵素 panel',
+    description: '查 GAA、GLA、ABG、IDUA 等 panel',
+    tooltip: '顯示 lysosomal storage disease 多重酵素 panel',
+    group: 'lab',
+  },
+  {
+    id: 'enzyme',
+    code: 'Enzyme',
+    name: '酵素檢驗',
+    description: '查酵素活性、檢體類別、技術人員與結果',
+    tooltip: '顯示酵素活性檢驗結果',
+    group: 'lab',
+  },
+  {
+    id: 'gag',
+    code: 'GAG',
+    name: 'GAG 定量',
+    description: '查 GAG、Creatinine 及相關結果',
+    tooltip: '顯示 GAG、Creatinine 定量結果，用於 MPS 評估',
+    group: 'lab',
+  },
+  {
+    id: 'dnabank',
+    code: 'DNAbank',
+    name: 'DNA 檢體庫',
+    description: '查 DNA 樣本編號、樣本類型、備註與管理資訊',
+    tooltip: '顯示 DNA 樣本與檢體管理資訊',
+    group: 'specimen',
+  },
+  {
+    id: 'outbank',
+    code: 'Outbank',
+    name: '外送檢體',
+    description: '查外送檢體編號、送驗日期、assay 與結果',
+    tooltip: '顯示外送檢體、送驗日期、assay 與結果',
+    group: 'specimen',
+  },
 ];
 
 export interface PresetConfig {
@@ -184,9 +292,24 @@ export interface PresetConfig {
 
 export const PRESETS: PresetConfig[] = [
   { id: 'summary', name: '病人摘要', icon: 'user', modules: ['basic', 'opd'] },
-  { id: 'metabolic', name: '代謝篩檢', icon: 'flask', modules: ['aa', 'msms', 'mma', 'aadc', 'ald'] },
-  { id: 'lsd-mps', name: 'LSD / MPS 相關', icon: 'microscope', modules: ['biomarker', 'lsd', 'enzyme', 'gag', 'mps2'] },
-  { id: 'specimen', name: '檢體管理', icon: 'tube', modules: ['dnabank', 'outbank'] },
+  {
+    id: 'metabolic',
+    name: '代謝篩檢',
+    icon: 'flask',
+    modules: ['aa', 'msms', 'mma', 'aadc', 'ald'],
+  },
+  {
+    id: 'lsd-mps',
+    name: 'LSD / MPS 相關',
+    icon: 'microscope',
+    modules: ['biomarker', 'lsd', 'enzyme', 'gag', 'mps2'],
+  },
+  {
+    id: 'specimen',
+    name: '檢體管理',
+    icon: 'tube',
+    modules: ['dnabank', 'outbank'],
+  },
 ];
 
 export type FieldType = 'text' | 'number' | 'date' | 'category';
@@ -198,7 +321,19 @@ export interface FieldDefinition {
   options?: string[];
 }
 
-export type Operator = 'eq' | 'neq' | 'contains' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'before' | 'after' | 'has_data' | 'no_data';
+export type Operator =
+  | 'eq'
+  | 'neq'
+  | 'contains'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'between'
+  | 'before'
+  | 'after'
+  | 'has_data'
+  | 'no_data';
 
 export interface OperatorInfo {
   id: Operator;
@@ -267,8 +402,18 @@ export const MODULE_FIELDS: Record<ModuleId, FieldDefinition[]> = {
   ],
   aa: [
     { id: 'sampleName', label: 'Sample Name', type: 'text' },
-    { id: 'specimenType', label: '檢體類別', type: 'category', options: ['Plasma', 'CSF', 'Urine'] },
-    { id: 'result', label: 'Result', type: 'category', options: ['Normal', 'Abnormal'] },
+    {
+      id: 'specimenType',
+      label: '檢體類別',
+      type: 'category',
+      options: ['Plasma', 'CSF', 'Urine'],
+    },
+    {
+      id: 'result',
+      label: 'Result',
+      type: 'category',
+      options: ['Normal', 'Abnormal'],
+    },
     { id: 'Gln', label: 'Gln', type: 'number' },
     { id: 'Citr', label: 'Citr', type: 'number' },
     { id: 'Ala', label: 'Ala', type: 'number' },
@@ -280,8 +425,18 @@ export const MODULE_FIELDS: Record<ModuleId, FieldDefinition[]> = {
   ],
   msms: [
     { id: 'sampleName', label: 'Sample Name', type: 'text' },
-    { id: 'specimenType', label: '檢體類別', type: 'category', options: ['DBS', 'Plasma'] },
-    { id: 'result', label: 'Result', type: 'category', options: ['Normal', 'Abnormal'] },
+    {
+      id: 'specimenType',
+      label: '檢體類別',
+      type: 'category',
+      options: ['DBS', 'Plasma'],
+    },
+    {
+      id: 'result',
+      label: 'Result',
+      type: 'category',
+      options: ['Normal', 'Abnormal'],
+    },
     { id: 'Ala', label: 'Ala', type: 'number' },
     { id: 'Arg', label: 'Arg', type: 'number' },
     { id: 'Cit', label: 'Cit', type: 'number' },
@@ -337,15 +492,35 @@ export const MODULE_FIELDS: Record<ModuleId, FieldDefinition[]> = {
   ],
   enzyme: [
     { id: 'sampleName', label: 'Sample Name', type: 'text' },
-    { id: 'specimenType', label: '檢體類別', type: 'category', options: ['Leukocyte', 'Plasma', 'Fibroblast'] },
-    { id: 'result', label: 'Result', type: 'category', options: ['Normal', 'Deficient', 'Intermediate'] },
+    {
+      id: 'specimenType',
+      label: '檢體類別',
+      type: 'category',
+      options: ['Leukocyte', 'Plasma', 'Fibroblast'],
+    },
+    {
+      id: 'result',
+      label: 'Result',
+      type: 'category',
+      options: ['Normal', 'Deficient', 'Intermediate'],
+    },
     { id: 'MPS1', label: 'MPS1', type: 'number' },
     { id: 'enzymeMPS2', label: 'Enzyme-MPS2', type: 'number' },
   ],
   gag: [
     { id: 'sampleName', label: 'Sample Name', type: 'text' },
-    { id: 'specimenType', label: '檢體類別', type: 'category', options: ['Urine', 'Plasma'] },
-    { id: 'result', label: 'Result', type: 'category', options: ['Normal', 'Elevated', 'Borderline'] },
+    {
+      id: 'specimenType',
+      label: '檢體類別',
+      type: 'category',
+      options: ['Urine', 'Plasma'],
+    },
+    {
+      id: 'result',
+      label: 'Result',
+      type: 'category',
+      options: ['Normal', 'Elevated', 'Borderline'],
+    },
     { id: 'DMGGAG', label: 'DMGGAG', type: 'number' },
     { id: 'CREATININE', label: 'Creatinine', type: 'number' },
   ],
@@ -355,7 +530,12 @@ export const MODULE_FIELDS: Record<ModuleId, FieldDefinition[]> = {
     { id: 'orderMemo', label: '備註', type: 'text' },
     { id: 'keyword', label: '關鍵字', type: 'text' },
     { id: 'specimenno', label: '檢體編號', type: 'text' },
-    { id: 'specimen', label: '檢體類別', type: 'category', options: ['Whole blood', 'Fibroblast', 'Saliva'] },
+    {
+      id: 'specimen',
+      label: '檢體類別',
+      type: 'category',
+      options: ['Whole blood', 'Fibroblast', 'Saliva'],
+    },
   ],
   outbank: [
     { id: 'sampleno', label: '樣本編號', type: 'text' },
@@ -379,7 +559,13 @@ export const CONDITION_TEMPLATES: ConditionTemplate[] = [
     name: 'Biomarker 異常',
     description: '篩選 DBS LysoGb3 > 5 的病人',
     conditions: [
-      { moduleId: 'biomarker', fieldId: 'dbsLysoGb3', operator: 'gt', value: '5', value2: '' },
+      {
+        moduleId: 'biomarker',
+        fieldId: 'dbsLysoGb3',
+        operator: 'gt',
+        value: '5',
+        value2: '',
+      },
     ],
     logic: 'AND',
   },
@@ -388,8 +574,20 @@ export const CONDITION_TEMPLATES: ConditionTemplate[] = [
     name: 'MPS 相關異常',
     description: '篩選 MPS2 酵素活性低 或 GAG 偏高',
     conditions: [
-      { moduleId: 'mps2', fieldId: 'MPS2', operator: 'lt', value: '5', value2: '' },
-      { moduleId: 'gag', fieldId: 'DMGGAG', operator: 'gt', value: '200', value2: '' },
+      {
+        moduleId: 'mps2',
+        fieldId: 'MPS2',
+        operator: 'lt',
+        value: '5',
+        value2: '',
+      },
+      {
+        moduleId: 'gag',
+        fieldId: 'DMGGAG',
+        operator: 'gt',
+        value: '200',
+        value2: '',
+      },
     ],
     logic: 'OR',
   },
@@ -398,7 +596,13 @@ export const CONDITION_TEMPLATES: ConditionTemplate[] = [
     name: 'Phe 偏高（PKU 相關）',
     description: '篩選 AA 或 MS/MS 中 Phe > 120',
     conditions: [
-      { moduleId: 'aa', fieldId: 'Phe', operator: 'gt', value: '120', value2: '' },
+      {
+        moduleId: 'aa',
+        fieldId: 'Phe',
+        operator: 'gt',
+        value: '120',
+        value2: '',
+      },
     ],
     logic: 'AND',
   },
@@ -407,7 +611,13 @@ export const CONDITION_TEMPLATES: ConditionTemplate[] = [
     name: '最近外送檢體',
     description: '篩選送驗日期在 2025 年以後的外送檢體',
     conditions: [
-      { moduleId: 'outbank', fieldId: 'shipdate', operator: 'after', value: '2025-01-01', value2: '' },
+      {
+        moduleId: 'outbank',
+        fieldId: 'shipdate',
+        operator: 'after',
+        value: '2025-01-01',
+        value2: '',
+      },
     ],
     logic: 'AND',
   },
@@ -416,7 +626,13 @@ export const CONDITION_TEMPLATES: ConditionTemplate[] = [
     name: '酵素活性低下',
     description: '篩選 Enzyme result 為 Deficient 的病人',
     conditions: [
-      { moduleId: 'enzyme', fieldId: 'result', operator: 'eq', value: 'Deficient', value2: '' },
+      {
+        moduleId: 'enzyme',
+        fieldId: 'result',
+        operator: 'eq',
+        value: 'Deficient',
+        value2: '',
+      },
     ],
     logic: 'AND',
   },

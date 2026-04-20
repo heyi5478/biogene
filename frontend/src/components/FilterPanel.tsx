@@ -1,14 +1,44 @@
 import React, { useState } from 'react';
-import { Search, X, User, FlaskConical, Microscope, TestTube, ChevronDown, Filter } from 'lucide-react';
+import {
+  Search,
+  X,
+  User,
+  FlaskConical,
+  Microscope,
+  TestTube,
+  ChevronDown,
+  Filter,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ModuleId, MODULE_DEFINITIONS, PRESETS, ConditionRow, ConditionLogic } from '@/types/medical';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  ModuleId,
+  MODULE_DEFINITIONS,
+  PRESETS,
+  ConditionRow,
+  ConditionLogic,
+} from '@/types/medical';
 import { ConditionBuilder } from '@/components/ConditionBuilder';
 
 const presetIcons = {
@@ -73,7 +103,7 @@ export function FilterPanel({
 
   const toggleModule = (id: ModuleId) => {
     if (selectedModules.includes(id)) {
-      onModulesChange(selectedModules.filter(m => m !== id));
+      onModulesChange(selectedModules.filter((m) => m !== id));
     } else {
       onModulesChange([...selectedModules, id]);
     }
@@ -86,14 +116,14 @@ export function FilterPanel({
   const groups = ['patient', 'disease', 'lab', 'specimen'] as const;
 
   return (
-    <aside className="w-[300px] min-w-[300px] border-r border-border bg-card flex flex-col h-full overflow-hidden">
+    <aside className="flex h-full w-[300px] min-w-[300px] flex-col overflow-hidden border-r border-border bg-card">
       {/* Header with mode toggle */}
-      <div className="px-4 py-3 border-b border-border space-y-2">
+      <div className="space-y-2 border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold text-foreground">篩選條件</h2>
-        <div className="flex rounded-md border border-border overflow-hidden">
+        <div className="flex overflow-hidden rounded-md border border-border">
           <button
             onClick={() => onQueryModeChange('patient')}
-            className={`flex-1 text-xs py-1.5 font-medium transition-colors ${
+            className={`flex-1 py-1.5 text-xs font-medium transition-colors ${
               queryMode === 'patient'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-card text-muted-foreground hover:bg-accent'
@@ -103,7 +133,7 @@ export function FilterPanel({
           </button>
           <button
             onClick={() => onQueryModeChange('condition')}
-            className={`flex-1 text-xs py-1.5 font-medium transition-colors ${
+            className={`flex-1 py-1.5 text-xs font-medium transition-colors ${
               queryMode === 'condition'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-card text-muted-foreground hover:bg-accent'
@@ -114,7 +144,7 @@ export function FilterPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto thin-scrollbar px-4 py-3 space-y-4">
+      <div className="thin-scrollbar flex-1 space-y-4 overflow-y-auto px-4 py-3">
         {queryMode === 'patient' ? (
           <>
             {/* Search */}
@@ -127,19 +157,25 @@ export function FilterPanel({
                   value={searchQuery}
                   onChange={(e) => onSearchQueryChange(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-                  className="pl-9 pr-8 h-9 text-sm"
+                  className="h-9 pl-9 pr-8 text-sm"
                 />
                 {searchQuery && (
                   <button
-                    onClick={() => { onSearchQueryChange(''); }}
+                    onClick={() => {
+                      onSearchQueryChange('');
+                    }}
                     className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 )}
               </div>
-              <Button onClick={onSearch} size="sm" className="w-full h-8 text-xs">
-                <Search className="h-3.5 w-3.5 mr-1" />
+              <Button
+                onClick={onSearch}
+                size="sm"
+                className="h-8 w-full text-xs"
+              >
+                <Search className="mr-1 h-3.5 w-3.5" />
                 搜尋
               </Button>
             </div>
@@ -149,17 +185,20 @@ export function FilterPanel({
               <Label className="text-xs text-muted-foreground">快捷查詢</Label>
               <div className="grid grid-cols-2 gap-1.5">
                 {PRESETS.map((preset) => {
-                  const Icon = presetIcons[preset.icon as keyof typeof presetIcons] || User;
-                  const isActive = preset.modules.every(m => selectedModules.includes(m)) &&
-                                  preset.modules.length > 0;
+                  const Icon =
+                    presetIcons[preset.icon as keyof typeof presetIcons] ||
+                    User;
+                  const isActive =
+                    preset.modules.every((m) => selectedModules.includes(m)) &&
+                    preset.modules.length > 0;
                   return (
                     <button
                       key={preset.id}
                       onClick={() => applyPreset(preset.modules)}
-                      className={`flex items-center gap-1.5 px-2.5 py-2 rounded-md text-xs font-medium transition-colors border ${
+                      className={`flex items-center gap-1.5 rounded-md border px-2.5 py-2 text-xs font-medium transition-colors ${
                         isActive
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-card text-foreground border-border hover:bg-accent'
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border bg-card text-foreground hover:bg-accent'
                       }`}
                     >
                       <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -173,22 +212,42 @@ export function FilterPanel({
             {/* Module Checkboxes */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-muted-foreground">資料模組</Label>
+                <Label className="text-xs text-muted-foreground">
+                  資料模組
+                </Label>
                 {selectedModules.length > 0 && (
-                  <button onClick={() => onModulesChange([])} className="text-[10px] text-primary hover:underline">
+                  <button
+                    onClick={() => onModulesChange([])}
+                    className="text-[10px] text-primary hover:underline"
+                  >
                     清除全部
                   </button>
                 )}
               </div>
-              <Accordion type="multiple" defaultValue={['patient', 'disease', 'lab', 'specimen']} className="space-y-0.5">
+              <Accordion
+                type="multiple"
+                defaultValue={['patient', 'disease', 'lab', 'specimen']}
+                className="space-y-0.5"
+              >
                 {groups.map((group) => {
-                  const modules = MODULE_DEFINITIONS.filter(m => m.group === group);
-                  const selectedCount = modules.filter(m => selectedModules.includes(m.id)).length;
+                  const modules = MODULE_DEFINITIONS.filter(
+                    (m) => m.group === group,
+                  );
+                  const selectedCount = modules.filter((m) =>
+                    selectedModules.includes(m.id),
+                  ).length;
                   return (
-                    <AccordionItem key={group} value={group} className="border rounded-md overflow-hidden">
+                    <AccordionItem
+                      key={group}
+                      value={group}
+                      className="overflow-hidden rounded-md border"
+                    >
                       <AccordionTrigger className="px-2.5 py-2 text-xs font-medium hover:no-underline">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 ${groupColors[group]}`}>
+                          <Badge
+                            variant="outline"
+                            className={`h-4 px-1.5 py-0 text-[10px] ${groupColors[group]}`}
+                          >
                             {selectedCount}/{modules.length}
                           </Badge>
                           <span>{groupLabels[group]}</span>
@@ -199,19 +258,29 @@ export function FilterPanel({
                           {modules.map((mod) => (
                             <Tooltip key={mod.id}>
                               <TooltipTrigger asChild>
-                                <label className="flex items-start gap-2 cursor-pointer py-1 px-1.5 rounded hover:bg-accent/50 transition-colors">
+                                <label className="flex cursor-pointer items-start gap-2 rounded px-1.5 py-1 transition-colors hover:bg-accent/50">
                                   <Checkbox
                                     checked={selectedModules.includes(mod.id)}
                                     onCheckedChange={() => toggleModule(mod.id)}
                                     className="mt-0.5 h-3.5 w-3.5"
                                   />
                                   <div className="min-w-0">
-                                    <div className="text-xs font-medium leading-tight">{mod.code} {mod.name !== mod.code ? `— ${mod.name}` : ''}</div>
-                                    <div className="text-[10px] text-muted-foreground leading-snug mt-0.5">{mod.description}</div>
+                                    <div className="text-xs font-medium leading-tight">
+                                      {mod.code}{' '}
+                                      {mod.name !== mod.code
+                                        ? `— ${mod.name}`
+                                        : ''}
+                                    </div>
+                                    <div className="mt-0.5 text-[10px] leading-snug text-muted-foreground">
+                                      {mod.description}
+                                    </div>
                                   </div>
                                 </label>
                               </TooltipTrigger>
-                              <TooltipContent side="right" className="max-w-[200px] text-xs">
+                              <TooltipContent
+                                side="right"
+                                className="max-w-[200px] text-xs"
+                              >
                                 {mod.tooltip}
                               </TooltipContent>
                             </Tooltip>
@@ -228,18 +297,22 @@ export function FilterPanel({
             <div className="space-y-2">
               <button
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+                className="flex w-full items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Filter className="h-3.5 w-3.5" />
                 <span>進階篩選</span>
-                <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`ml-auto h-3 w-3 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+                />
               </button>
               {showAdvanced && (
                 <div className="space-y-3 pt-1">
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">性別</Label>
+                    <Label className="text-[10px] text-muted-foreground">
+                      性別
+                    </Label>
                     <Select>
-                      <SelectTrigger className="h-8 text-xs mt-1">
+                      <SelectTrigger className="mt-1 h-8 text-xs">
                         <SelectValue placeholder="不限" />
                       </SelectTrigger>
                       <SelectContent>
@@ -250,15 +323,24 @@ export function FilterPanel({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">主診斷關鍵字</Label>
-                    <Input placeholder="如 Fabry、MPS" className="h-8 text-xs mt-1" />
+                    <Label className="text-[10px] text-muted-foreground">
+                      主診斷關鍵字
+                    </Label>
+                    <Input
+                      placeholder="如 Fabry、MPS"
+                      className="mt-1 h-8 text-xs"
+                    />
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">看診日期區間</Label>
-                    <div className="flex gap-1.5 mt-1">
-                      <Input type="date" className="h-8 text-xs flex-1" />
-                      <span className="text-xs text-muted-foreground self-center">~</span>
-                      <Input type="date" className="h-8 text-xs flex-1" />
+                    <Label className="text-[10px] text-muted-foreground">
+                      看診日期區間
+                    </Label>
+                    <div className="mt-1 flex gap-1.5">
+                      <Input type="date" className="h-8 flex-1 text-xs" />
+                      <span className="self-center text-xs text-muted-foreground">
+                        ~
+                      </span>
+                      <Input type="date" className="h-8 flex-1 text-xs" />
                     </div>
                   </div>
                 </div>
@@ -279,12 +361,12 @@ export function FilterPanel({
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2 border-t border-border">
+      <div className="border-t border-border px-4 py-2">
         <Button
           variant="outline"
           size="sm"
           onClick={queryMode === 'patient' ? onClearAll : onConditionClear}
-          className="w-full h-7 text-xs"
+          className="h-7 w-full text-xs"
         >
           清除全部條件
         </Button>
