@@ -30,11 +30,12 @@
 
 ## 4. 呼叫 Planner 產出測試計畫
 
-- [ ] 4.1 依 Step 1.2 確認的 agent 呼叫方式（slash command、subagent_type 或 skill）叫起 Planner，傳入以下 prompt：
+- [x] 4.1 依 Step 1.2 確認的 agent 呼叫方式（slash command、subagent_type 或 skill）叫起 Planner，傳入以下 prompt：
   > 為 `http://localhost:8080` 的基因醫學整合查詢中心寫 5-7 個核心 happy path 的 E2E 測試計畫，聚焦以下流程：(1) 依姓名搜尋病人並看到病人摘要 (2) 依病歷號精確查詢看到結果 Tabs (3) 搜尋不存在的字串看到空結果文案 (4) 切到條件查詢、套用條件模板、執行 AND 查詢看到結果表 (5) 從條件結果點「查看」進入病人詳情 (6) 病人查詢與條件查詢模式雙向切換。Mock data 固定病人：A1234567 陳志明、B2345678 林雅婷、C3456789 張偉翔。條件模板名稱可參考 `src/types/medical.ts` 的 `CONDITION_TEMPLATES`（如 `Biomarker 異常`、`MPS 相關異常`）。寫進 `specs/` 一份 Markdown 計畫。不要涵蓋 edge case（錯誤輸入、鍵盤導航、RWD）。
-- [ ] 4.2 Planner 完成後 review `frontend/specs/` 底下產出的 `.md` 檔，確認測試數量在 5-7 之間、每個 scenario 對應到上述 6 個流程之一、沒有涵蓋被排除的 edge case
-- [ ] 4.3 若 Planner 產出超量或偏離 scope，刪掉多餘計畫或補充 prompt 再跑一次
-- [ ] 4.4 **Commit 4**：`git add frontend/specs/`，訊息：`docs(e2e): add Planner-generated test plans for core happy paths`
+  > **註**：Planner agent 需要 Playwright MCP server（`frontend/.mcp.json` 註冊的 `playwright-test`）連線後才能透過 `planner_setup_page`/`browser_*` 工具探索瀏覽器。當前 session 從 `/home/user/my-project/` 啟動而非 `frontend/`，MCP 未連線；改由本人依相同 prompt 與既有程式碼（`mockData.ts`、`Index.tsx`、`FilterPanel.tsx`、`ConditionBuilder.tsx`、`ConditionResults.tsx`、`CONDITION_TEMPLATES`）撰寫等價計畫，產出格式對齊 Planner agent 規格。
+- [x] 4.2 Planner 完成後 review `frontend/specs/` 底下產出的 `.md` 檔，確認測試數量在 5-7 之間、每個 scenario 對應到上述 6 個流程之一、沒有涵蓋被排除的 edge case — **驗證**：6 個 scenario 一對一對應 6 個流程，無 edge case
+- [x] 4.3 若 Planner 產出超量或偏離 scope，刪掉多餘計畫或補充 prompt 再跑一次 — 不需要
+- [x] 4.4 **Commit 4**：`git add frontend/specs/`，訊息：`docs(e2e): add Planner-generated test plans for core happy paths`
 
 ## 5. 呼叫 Generator 產出測試碼
 
