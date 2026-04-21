@@ -88,8 +88,8 @@ function MedicalTable({
       <table className="medical-table w-full">
         <thead>
           <tr>
-            {headers.map((h, i) => (
-              <th key={i} className="whitespace-nowrap">
+            {headers.map((h) => (
+              <th key={h} className="whitespace-nowrap">
                 {h}
               </th>
             ))}
@@ -97,9 +97,11 @@ function MedicalTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
+            // eslint-disable-next-line react/no-array-index-key
             <tr key={i}>
               {row.map((cell, j) => (
-                <td key={j} className="whitespace-nowrap">
+                // eslint-disable-next-line react/no-array-index-key
+                <td key={`${i}-${j}`} className="whitespace-nowrap">
                   {cell}
                 </td>
               ))}
@@ -215,22 +217,25 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
               'Tyr',
             ]}
             rows={patient.aa.map((r) => [
-              <span className="font-mono-medical">{r.sampleName}</span>,
+              <span key="sample" className="font-mono-medical">
+                {r.sampleName}
+              </span>,
               r.specimenType,
               <Badge
+                key="result"
                 variant={r.result === 'Abnormal' ? 'destructive' : 'secondary'}
                 className="h-4 text-[10px]"
               >
                 {r.result}
               </Badge>,
-              <MonoVal val={r.Gln} />,
-              <MonoVal val={r.Citr} />,
-              <MonoVal val={r.Ala} />,
-              <MonoVal val={r.Arg} />,
-              <MonoVal val={r.Leu} />,
-              <MonoVal val={r.Val} />,
-              <MonoVal val={r.Phe} />,
-              <MonoVal val={r.Tyr} />,
+              <MonoVal key="Gln" val={r.Gln} />,
+              <MonoVal key="Citr" val={r.Citr} />,
+              <MonoVal key="Ala" val={r.Ala} />,
+              <MonoVal key="Arg" val={r.Arg} />,
+              <MonoVal key="Leu" val={r.Leu} />,
+              <MonoVal key="Val" val={r.Val} />,
+              <MonoVal key="Phe" val={r.Phe} />,
+              <MonoVal key="Tyr" val={r.Tyr} />,
             ])}
           />
         </ModuleSection>
@@ -263,27 +268,30 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
               'C5',
             ]}
             rows={patient.msms.map((r) => [
-              <span className="font-mono-medical">{r.sampleName}</span>,
+              <span key="sample" className="font-mono-medical">
+                {r.sampleName}
+              </span>,
               r.specimenType,
               <Badge
+                key="result"
                 variant={r.result === 'Abnormal' ? 'destructive' : 'secondary'}
                 className="h-4 text-[10px]"
               >
                 {r.result}
               </Badge>,
-              <MonoVal val={r.Ala} />,
-              <MonoVal val={r.Arg} />,
-              <MonoVal val={r.Cit} />,
-              <MonoVal val={r.Gly} />,
-              <MonoVal val={r.Leu} />,
-              <MonoVal val={r.Met} />,
-              <MonoVal val={r.Phe} />,
-              <MonoVal val={r.Tyr} />,
-              <MonoVal val={r.Val} />,
-              <MonoVal val={r.C0} />,
-              <MonoVal val={r.C2} />,
-              <MonoVal val={r.C3} />,
-              <MonoVal val={r.C5} />,
+              <MonoVal key="Ala" val={r.Ala} />,
+              <MonoVal key="Arg" val={r.Arg} />,
+              <MonoVal key="Cit" val={r.Cit} />,
+              <MonoVal key="Gly" val={r.Gly} />,
+              <MonoVal key="Leu" val={r.Leu} />,
+              <MonoVal key="Met" val={r.Met} />,
+              <MonoVal key="Phe" val={r.Phe} />,
+              <MonoVal key="Tyr" val={r.Tyr} />,
+              <MonoVal key="Val" val={r.Val} />,
+              <MonoVal key="C0" val={r.C0} />,
+              <MonoVal key="C2" val={r.C2} />,
+              <MonoVal key="C3" val={r.C3} />,
+              <MonoVal key="C5" val={r.C5} />,
             ])}
           />
         </ModuleSection>
@@ -307,13 +315,15 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
               'Plasma Lyso-SM',
             ]}
             rows={patient.biomarker.map((r) => [
-              <span className="font-mono-medical">{r.sampleName}</span>,
-              <MonoVal val={r.dbsLysoGb3} />,
-              <MonoVal val={r.dbsLysoGL1} />,
-              <MonoVal val={r.dbsLysoSM} />,
-              <MonoVal val={r.plasmaLysoGb3} />,
-              <MonoVal val={r.plasmaLysoGL1} />,
-              <MonoVal val={r.plasmaLysoSM} />,
+              <span key="sample" className="font-mono-medical">
+                {r.sampleName}
+              </span>,
+              <MonoVal key="dbsLysoGb3" val={r.dbsLysoGb3} />,
+              <MonoVal key="dbsLysoGL1" val={r.dbsLysoGL1} />,
+              <MonoVal key="dbsLysoSM" val={r.dbsLysoSM} />,
+              <MonoVal key="plasmaLysoGb3" val={r.plasmaLysoGb3} />,
+              <MonoVal key="plasmaLysoGL1" val={r.plasmaLysoGL1} />,
+              <MonoVal key="plasmaLysoSM" val={r.plasmaLysoSM} />,
             ])}
           />
         </ModuleSection>
@@ -329,8 +339,10 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
           <MedicalTable
             headers={['Sample', '濃度 (Conc)', '日期']}
             rows={patient.aadc.map((r) => [
-              <span className="font-mono-medical">{r.sampleName}</span>,
-              <MonoVal val={r.conc} />,
+              <span key="sample" className="font-mono-medical">
+                {r.sampleName}
+              </span>,
+              <MonoVal key="conc" val={r.conc} />,
               r.date || '—',
             ])}
           />
@@ -343,8 +355,10 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
           <MedicalTable
             headers={['Sample', '濃度 (Conc)', '日期']}
             rows={patient.ald.map((r) => [
-              <span className="font-mono-medical">{r.sampleName}</span>,
-              <MonoVal val={r.conc} />,
+              <span key="sample" className="font-mono-medical">
+                {r.sampleName}
+              </span>,
+              <MonoVal key="conc" val={r.conc} />,
               r.date || '—',
             ])}
           />
@@ -357,8 +371,10 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
           <MedicalTable
             headers={['Sample', '濃度 (Conc)', '日期']}
             rows={patient.mma.map((r) => [
-              <span className="font-mono-medical">{r.sampleName}</span>,
-              <MonoVal val={r.conc} />,
+              <span key="sample" className="font-mono-medical">
+                {r.sampleName}
+              </span>,
+              <MonoVal key="conc" val={r.conc} />,
               r.date || '—',
             ])}
           />
@@ -375,11 +391,13 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
           <MedicalTable
             headers={['Sample', 'MPS2', 'TPP1', 'MPS4A', 'MPS6']}
             rows={patient.mps2.map((r) => [
-              <span className="font-mono-medical">{r.sampleName}</span>,
-              <MonoVal val={r.MPS2} />,
-              <MonoVal val={r.TPP1} />,
-              <MonoVal val={r.MPS4A} />,
-              <MonoVal val={r.MPS6} />,
+              <span key="sample" className="font-mono-medical">
+                {r.sampleName}
+              </span>,
+              <MonoVal key="MPS2" val={r.MPS2} />,
+              <MonoVal key="TPP1" val={r.TPP1} />,
+              <MonoVal key="MPS4A" val={r.MPS4A} />,
+              <MonoVal key="MPS6" val={r.MPS6} />,
             ])}
           />
         </ModuleSection>
@@ -395,12 +413,14 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
           <MedicalTable
             headers={['Sample', 'GAA', 'GLA', 'ABG', 'IDUA', 'ABG/GAA']}
             rows={patient.lsd.map((r) => [
-              <span className="font-mono-medical">{r.sampleName}</span>,
-              <MonoVal val={r.GAA} />,
-              <MonoVal val={r.GLA} />,
-              <MonoVal val={r.ABG} />,
-              <MonoVal val={r.IDUA} />,
-              <MonoVal val={r.ABG_GAA} />,
+              <span key="sample" className="font-mono-medical">
+                {r.sampleName}
+              </span>,
+              <MonoVal key="GAA" val={r.GAA} />,
+              <MonoVal key="GLA" val={r.GLA} />,
+              <MonoVal key="ABG" val={r.ABG} />,
+              <MonoVal key="IDUA" val={r.IDUA} />,
+              <MonoVal key="ABG_GAA" val={r.ABG_GAA} />,
             ])}
           />
         </ModuleSection>
@@ -423,17 +443,20 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
               'Enzyme-MPS2',
             ]}
             rows={patient.enzyme.map((r) => [
-              <span className="font-mono-medical">{r.sampleName}</span>,
+              <span key="sample" className="font-mono-medical">
+                {r.sampleName}
+              </span>,
               r.specimenType,
               r.technician,
               <Badge
+                key="result"
                 variant={r.result === 'Deficient' ? 'destructive' : 'secondary'}
                 className="h-4 text-[10px]"
               >
                 {r.result}
               </Badge>,
-              <MonoVal val={r.MPS1} />,
-              <MonoVal val={r.enzymeMPS2} />,
+              <MonoVal key="MPS1" val={r.MPS1} />,
+              <MonoVal key="enzymeMPS2" val={r.enzymeMPS2} />,
             ])}
           />
         </ModuleSection>
@@ -452,17 +475,20 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
               'CREATININE',
             ]}
             rows={patient.gag.map((r) => [
-              <span className="font-mono-medical">{r.sampleName}</span>,
+              <span key="sample" className="font-mono-medical">
+                {r.sampleName}
+              </span>,
               r.specimenType,
               r.technician,
               <Badge
+                key="result"
                 variant={r.result === 'Elevated' ? 'destructive' : 'secondary'}
                 className="h-4 text-[10px]"
               >
                 {r.result}
               </Badge>,
-              <MonoVal val={r.DMGGAG} />,
-              <MonoVal val={r.CREATININE} />,
+              <MonoVal key="DMGGAG" val={r.DMGGAG} />,
+              <MonoVal key="CREATININE" val={r.CREATININE} />,
             ])}
           />
         </ModuleSection>
@@ -485,13 +511,13 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
               'Specimen',
             ]}
             rows={patient.dnabank.map((r) => [
-              <span className="font-mono-medical">
+              <span key="orderno" className="font-mono-medical">
                 {r.orderno} <CopyBtn text={r.orderno} />
               </span>,
               r.order,
               r.orderMemo || '—',
               r.keyword || '—',
-              <span className="font-mono-medical">
+              <span key="specimenno" className="font-mono-medical">
                 {r.specimenno} <CopyBtn text={r.specimenno} />
               </span>,
               r.specimen,
@@ -510,12 +536,13 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
           <MedicalTable
             headers={['Sample No', '送驗日期', 'Assay', 'Result']}
             rows={patient.outbank.map((r) => [
-              <span className="font-mono-medical">
+              <span key="sampleno" className="font-mono-medical">
                 {r.sampleno} <CopyBtn text={r.sampleno} />
               </span>,
               r.shipdate,
               r.assay,
               <span
+                key="result"
                 className={
                   r.result === 'Pending' ? 'font-medium text-amber-600' : ''
                 }

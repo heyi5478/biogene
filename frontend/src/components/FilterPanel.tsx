@@ -258,6 +258,7 @@ export function FilterPanel({
                           {modules.map((mod) => (
                             <Tooltip key={mod.id}>
                               <TooltipTrigger asChild>
+                                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                                 <label className="flex cursor-pointer items-start gap-2 rounded px-1.5 py-1 transition-colors hover:bg-accent/50">
                                   <Checkbox
                                     checked={selectedModules.includes(mod.id)}

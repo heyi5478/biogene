@@ -33,7 +33,14 @@ interface ConditionBuilderProps {
 
 let conditionIdCounter = 0;
 function newConditionId() {
-  return `cond-${++conditionIdCounter}`;
+  conditionIdCounter += 1;
+  return `cond-${conditionIdCounter}`;
+}
+
+function inputTypeFor(fieldType: FieldDefinition['type']) {
+  if (fieldType === 'number') return 'number';
+  if (fieldType === 'date') return 'date';
+  return 'text';
 }
 
 export function ConditionBuilder({
@@ -267,13 +274,7 @@ export function ConditionBuilder({
                         </Select>
                       ) : (
                         <Input
-                          type={
-                            fieldDef.type === 'number'
-                              ? 'number'
-                              : fieldDef.type === 'date'
-                                ? 'date'
-                                : 'text'
-                          }
+                          type={inputTypeFor(fieldDef.type)}
                           value={row.value}
                           onChange={(e) =>
                             updateRow(row.id, { value: e.target.value })
