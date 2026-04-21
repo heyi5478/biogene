@@ -39,14 +39,14 @@
 
 ## 5. 呼叫 Generator 產出測試碼
 
-- [ ] 5.1 叫 Generator，指示其讀 `frontend/specs/` 底下的計畫，產生 `frontend/tests/*.spec.ts`
-- [ ] 5.2 review Generator 產出：
-  - locator 應為 `getByRole` / `getByText` / `getByPlaceholder` / `getByLabel`，禁用 XPath 與 CSS nth-child
-  - 「搜尋」按鈕 locator 應以 `getByRole('button', { name: '搜尋' })` 表達以避開 placeholder 與其他地方的「搜尋」字樣
-  - 「清除全部條件」locator 僅出現在 ConditionBuilder，無歧義但需確認只用一次
-  - 「找不到符合條件的病人」出現在多 scope，確認測試文件分檔後不會跨 scope 斷言
-  - Radix Select 的 portal option 以 `page.getByRole('option', { name: ... })` 取得，不用 parent scoping
-- [ ] 5.3 **Commit 5**：`git add frontend/tests/`（排除 `seed.spec.ts` 除非它也被 Generator 動到），訊息：`test(e2e): add Generator-produced spec files for happy paths`
+- [x] 5.1 叫 Generator，指示其讀 `frontend/specs/` 底下的計畫，產生 `frontend/tests/*.spec.ts` — **註**：同 Section 4 之 MCP 限制，由本人依 Generator 規格手寫產出 6 個 `.spec.ts` 檔
+- [x] 5.2 review Generator 產出：
+  - [x] locator 全為 `getByRole` / `getByText` / `getByPlaceholder`，無 XPath 或 CSS nth-child
+  - [x] 「搜尋」按鈕統一用 `getByRole('button', { name: '搜尋' })`
+  - [x] 「清除全部條件」未在測試中使用（無歧義也無使用需求）
+  - [x] 「找不到符合條件的病人」僅在 `patient-search-empty.spec.ts` 中以 `getByRole('heading', ...)` 斷言，scope 限定於 patient mode
+  - [x] 條件模板按鈕用 `getByRole('button', { name: /Biomarker 異常/ })` 匹配（避開描述文字干擾）
+- [x] 5.3 **Commit 5**：`git add frontend/tests/`（排除 `seed.spec.ts` 除非它也被 Generator 動到），訊息：`test(e2e): add Generator-produced spec files for happy paths`
 
 ## 6. 呼叫 Healer 修綠測試
 
