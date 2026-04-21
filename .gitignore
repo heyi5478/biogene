@@ -4,6 +4,7 @@ dist/
 build/
 .vite/
 *.log
+*.tsbuildinfo
 
 # Env / 機密
 .env
