@@ -58,17 +58,17 @@
 
 ## 7. 驗證
 
-- [ ] 7.1 於 `frontend/` 執行 `npm run lint` 確認新測試檔通過 ESLint（airbnb + typescript）
-- [ ] 7.2 於 `frontend/` 執行 `npm run format:check` 確認新測試檔通過 Prettier
-- [ ] 7.3 於 `frontend/` 執行 `npm run typecheck` 確認新測試檔 TypeScript 無錯
-- [ ] 7.4 於 `frontend/` 執行 `npm run test:e2e` 本機全綠
-- [ ] 7.5 於 `frontend/` 以 `CI=1 npm run test:e2e` 模擬 CI（1 worker、retries=2），確認仍全綠
-- [ ] 7.6 本機 commit 歷史檢查：`git log --oneline main..HEAD` 顯示 5-6 個 commit，訊息依序為 Section 1-6 的 commit 訊息，沒有 squash、沒有 WIP 訊息
+- [x] 7.1 於 `frontend/` 執行 `npm run lint` 確認新測試檔通過 ESLint（airbnb + typescript） — **0 errors, 10 pre-existing warnings**。初次執行時新 spec 檔觸發 `projectService` "not found" 錯誤；新建 `tsconfig.test.json`（extends `tsconfig.app.json`、include `tests`/`playwright.config.ts`、types `@playwright/test`/`node`），在 `tsconfig.json` 的 `references` 加入 `tsconfig.test.json`，並從 `eslint.config.js` 的 `allowDefaultProject` 移除 `playwright.config.ts` 與 `tests/seed.spec.ts`（現在由新的 project reference 覆蓋）。
+- [x] 7.2 於 `frontend/` 執行 `npm run format:check` 確認新測試檔通過 Prettier — **All matched files use Prettier code style**
+- [x] 7.3 於 `frontend/` 執行 `npm run typecheck` 確認新測試檔 TypeScript 無錯 — **tsc -b --noEmit 無輸出**
+- [x] 7.4 於 `frontend/` 執行 `npm run test:e2e` 本機全綠 — **7 passed (11.6s)**
+- [x] 7.5 於 `frontend/` 以 `CI=1 npm run test:e2e` 模擬 CI（1 worker、retries=2），確認仍全綠 — 因 port 8080 有外部 dev server 占用無法使用 `CI=1`；改用 `npx playwright test --workers=1 --retries=2` 直接套用 CI 關鍵設定，**7 passed (17.0s)**
+- [x] 7.6 本機 commit 歷史檢查：`git log --oneline main..HEAD` 顯示 5-6 個 commit，訊息依序為 Section 1-6 的 commit 訊息，沒有 squash、沒有 WIP 訊息 — 實際為 **7 個 commit**（Section 1–6 共 6 個 + Section 7 一個 `chore(e2e): register tsconfig.test.json for ESLint projectService`），比規劃多 1 個因 Section 7.1 需新增 tsconfig/eslint 基礎設施才能通過 lint；每個 commit 皆 scope 清楚無 squash 無 WIP
 
 ## 8. 推送與 PR
 
-- [ ] 8.1 確認 `frontend/src/**/*` 未被本次 change 修改：`git diff main -- frontend/src` 輸出為空
-- [ ] 8.2 確認 `.github/workflows/ci.yml` 未被本次 change 修改：`git diff main -- .github/workflows/ci.yml` 輸出為空
+- [x] 8.1 確認 `frontend/src/**/*` 未被本次 change 修改：`git diff main -- frontend/src` 輸出為空 — **驗證通過，輸出為空**
+- [x] 8.2 確認 `.github/workflows/ci.yml` 未被本次 change 修改：`git diff main -- .github/workflows/ci.yml` 輸出為空 — **驗證通過，輸出為空**
 - [ ] 8.3 推送 branch：`git push -u origin chore/add-playwright-e2e-tests`
 - [ ] 8.4 開啟 PR 目標為 `main`（`gh pr create ...`），PR description 說明新增的 E2E 測試、Playwright Test Agents 工作流程、未來新增測試的 SOP（Planner → Generator → Healer）、以及 commit 拆分邏輯
 - [ ] 8.5 等 GitHub Actions 的六個 job 全綠，特別確認 `e2e` job 通過
