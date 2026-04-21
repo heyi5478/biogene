@@ -38,7 +38,16 @@ export default tseslint.config(
         ...globals.jest,
       },
       parserOptions: {
-        project: './tsconfig.json',
+        projectService: {
+          allowDefaultProject: [
+            'eslint.config.js',
+            'postcss.config.js',
+            'tailwind.config.ts',
+            'vitest.config.ts',
+            'playwright.config.ts',
+            'tests/seed.spec.ts',
+          ],
+        },
         tsconfigRootDir: __dirname,
       },
     },
