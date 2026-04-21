@@ -44,8 +44,6 @@ export default tseslint.config(
             'postcss.config.js',
             'tailwind.config.ts',
             'vitest.config.ts',
-            'playwright.config.ts',
-            'tests/seed.spec.ts',
           ],
         },
         tsconfigRootDir: configDirname,
