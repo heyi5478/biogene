@@ -1,16 +1,16 @@
 ## 0. 分支準備
 
-- [ ] 0.1 從乾淨的 `main` 拉出 feature branch：`git checkout main && git pull && git checkout -b chore/add-playwright-e2e-tests`
-- [ ] 0.2 確認 `git status` 乾淨、`git branch --show-current` 顯示 `chore/add-playwright-e2e-tests`
-- [ ] 0.3 後續每一個群組（Section 1–6）完成後都要各自 commit，總計 5-6 個 commit，push 與開 PR 集中在 Section 8；嚴禁一個大 commit 混雜多個關注點
+- [x] 0.1 從乾淨的 `main` 拉出 feature branch：`git checkout main && git pull && git checkout -b chore/add-playwright-e2e-tests`
+- [x] 0.2 確認 `git status` 乾淨、`git branch --show-current` 顯示 `chore/add-playwright-e2e-tests`
+- [x] 0.3 後續每一個群組（Section 1–6）完成後都要各自 commit，總計 5-6 個 commit，push 與開 PR 集中在 Section 8；嚴禁一個大 commit 混雜多個關注點
 
 ## 1. 安裝 Playwright Test Agents
 
-- [ ] 1.1 於 `frontend/` 執行 `npx playwright init-agents --loop=claude`
-- [ ] 1.2 以 `ls -la frontend/.claude/` 與 `git status` 確認 agent 定義實際落在哪個目錄（`.claude/agents/`、`.claude/skills/` 或 `.claude/commands/`）；將實際路徑回填到 `design.md` 的 Open Questions 與 `proposal.md` 的 Impact 段落
-- [ ] 1.3 檢查 `init-agents` 是否建立 / 更新 `frontend/.mcp.json` 或 `frontend/.claude/settings.json`（註冊 Playwright MCP server）；若是，確認其內容並於 commit 時附上
-- [ ] 1.4 若 MCP server 需額外 npm 套件（例如 `@playwright/mcp`），在 `frontend/` 執行 `npm install -D <pkg>` 補齊；否則跳過
-- [ ] 1.5 **Commit 1**：`git add frontend/.claude frontend/.mcp.json frontend/package.json frontend/package-lock.json` 視實際產出而定，只加入 init-agents 相關檔案（不要混入後續 config / scripts 變動）；訊息：`chore(e2e): install Playwright Test Agents via init-agents --loop=claude`
+- [x] 1.1 於 `frontend/` 執行 `npx playwright init-agents --loop=claude`
+- [x] 1.2 以 `ls -la frontend/.claude/` 與 `git status` 確認 agent 定義實際落在哪個目錄（`.claude/agents/`、`.claude/skills/` 或 `.claude/commands/`）；將實際路徑回填到 `design.md` 的 Open Questions 與 `proposal.md` 的 Impact 段落 — **實際路徑**：`frontend/.claude/agents/playwright-test-{generator,healer,planner}.md`
+- [x] 1.3 檢查 `init-agents` 是否建立 / 更新 `frontend/.mcp.json` 或 `frontend/.claude/settings.json`（註冊 Playwright MCP server）；若是，確認其內容並於 commit 時附上 — **驗證**：寫入 `frontend/.mcp.json`，內容為 `playwright-test` server 透過 `npx playwright run-test-mcp-server`
+- [x] 1.4 若 MCP server 需額外 npm 套件（例如 `@playwright/mcp`），在 `frontend/` 執行 `npm install -D <pkg>` 補齊；否則跳過 — **跳過**：MCP server 由 `npx` 動態呼叫，無需安裝
+- [x] 1.5 **Commit 1**：`git add frontend/.claude frontend/.mcp.json frontend/package.json frontend/package-lock.json` 視實際產出而定，只加入 init-agents 相關檔案（不要混入後續 config / scripts 變動）；訊息：`chore(e2e): install Playwright Test Agents via init-agents --loop=claude` — **註**：本 repo 在前一個 change 已將 agent 檔案 commit 並做 prettier 格式化，本次 init-agents 重跑後與 HEAD 內容完全一致（再次 prettier 後零 diff），故 Commit 1 僅包含 spec/proposal 文件中 init-agents 驗證結果的回填
 
 ## 2. 升級 Playwright 設定
 

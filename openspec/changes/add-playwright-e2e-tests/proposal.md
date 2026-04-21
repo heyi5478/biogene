@@ -29,10 +29,10 @@
 ## Impact
 
 - **新增檔案**：
-  - `frontend/.claude/agents/`（或 `.claude/skills/` / `.claude/commands/` — 待 `init-agents` 跑完確認實際路徑）下的 Playwright 官方 agent 定義
+  - `frontend/.claude/agents/playwright-test-{generator,healer,planner}.md`（已驗證為 init-agents 實際輸出路徑）
   - `frontend/specs/*.md`（由 Planner 產生）
   - `frontend/tests/*.spec.ts`（由 Generator 產生；除保留的 `seed.spec.ts`）
-  - 可能的 `frontend/.mcp.json` 或 `frontend/.claude/settings.json`（由 `init-agents` 註冊 Playwright MCP server）
+  - `frontend/.mcp.json`（已驗證：init-agents 註冊 `playwright-test` MCP server，使用 `npx playwright run-test-mcp-server`）
 - **修改檔案**：
   - `frontend/playwright.config.ts`（擴充設定）
   - `frontend/package.json`（新增 5 個 scripts）
@@ -41,6 +41,6 @@
   - `.github/workflows/ci.yml` — 現有 `e2e` job 與 `ci-pipeline` spec 已符合需求
   - `.gitignore` — `frontend/.gitignore:16-19` 已含 `test-results/`、`playwright-report/`、`blob-report/`、`playwright/.cache/`
   - vitest 設定（`vitest.config.ts`、`src/test/setup.ts`、`src/test/example.test.ts`）— 與 Playwright 互不干涉
-- **相依套件**：不新增 npm 套件；`@playwright/test` 1.57 已存在。Playwright MCP server 可能由 `init-agents` 以 `npx` 呼叫，不一定需要 `npm install @playwright/mcp`（待實際驗證）
+- **相依套件**：不新增 npm 套件；`@playwright/test` 1.57 已存在。已驗證 Playwright MCP server 由 `init-agents` 設定為 `npx playwright run-test-mcp-server` 動態呼叫，不需 `npm install @playwright/mcp`
 - **對 CI 成本**：現有 `e2e` job 執行時間會因測試數量由 1 支增至 5-7 支而略增（預估 +30-60 秒），仍遠低於 build 與 npm ci 的時間
 - **對開發者**：日後新增 E2E 測試的 SOP 為「更新或新增 `specs/*.md` → 叫 Generator → 叫 Healer 修綠」，而非手寫 spec 檔

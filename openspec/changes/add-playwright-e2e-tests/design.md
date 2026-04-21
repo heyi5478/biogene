@@ -183,7 +183,7 @@
 
 ## Open Questions
 
-1. `npx playwright init-agents --loop=claude` 在 `frontend/` 底下會建立到 `.claude/agents/`、`.claude/skills/`、還是 `.claude/commands/`？需在 Step 1 跑完後確認，並在 tasks.md 中填入實際路徑
-2. Playwright MCP server 是否需要 `npm install @playwright/mcp`，或由 `init-agents` 設定用 `npx` 動態呼叫？需檢查 `init-agents` 是否動了 `.mcp.json` 或 `.claude/settings.json`
+1. ~~`npx playwright init-agents --loop=claude` 在 `frontend/` 底下會建立到 `.claude/agents/`、`.claude/skills/`、還是 `.claude/commands/`？~~ 已驗證：建立到 `frontend/.claude/agents/playwright-test-{generator,healer,planner}.md`
+2. ~~Playwright MCP server 是否需要 `npm install @playwright/mcp`？~~ 已驗證：不需要，`init-agents` 寫入 `frontend/.mcp.json` 以 `npx playwright run-test-mcp-server` 動態呼叫
 3. Planner 會把 specs 寫在 `frontend/specs/` 還是 `frontend/tests/specs/`？需依 agent 產出實際位置決定 `frontend/specs/README.md` 是否保留 / 更新
 4. 未來後端接上後，stub 策略（`page.route` vs fixture）：留在後續 change 處理，不在此 change 範圍
