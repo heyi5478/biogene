@@ -69,8 +69,8 @@
 
 - [x] 8.1 確認 `frontend/src/**/*` 未被本次 change 修改：`git diff main -- frontend/src` 輸出為空 — **驗證通過，輸出為空**
 - [x] 8.2 確認 `.github/workflows/ci.yml` 未被本次 change 修改：`git diff main -- .github/workflows/ci.yml` 輸出為空 — **驗證通過，輸出為空**
-- [ ] 8.3 推送 branch：`git push -u origin chore/add-playwright-e2e-tests`
-- [ ] 8.4 開啟 PR 目標為 `main`（`gh pr create ...`），PR description 說明新增的 E2E 測試、Playwright Test Agents 工作流程、未來新增測試的 SOP（Planner → Generator → Healer）、以及 commit 拆分邏輯
-- [ ] 8.5 等 GitHub Actions 的六個 job 全綠，特別確認 `e2e` job 通過
-- [ ] 8.6（選用）在 PR run 頁面驗證失敗路徑：另開一個 throwaway commit 刻意把斷言改錯，push 後確認 `playwright-report` artifact 可下載、trace 可播放；驗完後 `git reset --hard HEAD~1 && git push --force-with-lease`（或 revert commit）
-- [ ] 8.7 Review + merge PR 後，把 change 歸檔到 `openspec/changes/archive/` 並跑 `openspec validate`（由 `/opsx:archive` 處理）
+- [x] 8.3 推送 branch：`git push -u origin chore/add-playwright-e2e-tests` — **已推送；後續補推 Section 7 tooling commit 與 tasks.md 更新**
+- [x] 8.4 開啟 PR 目標為 `main`（`gh pr create ...`），PR description 說明新增的 E2E 測試、Playwright Test Agents 工作流程、未來新增測試的 SOP（Planner → Generator → Healer）、以及 commit 拆分邏輯 — **PR #14**：https://github.com/heyi5478/biogene/pull/14
+- [x] 8.5 等 GitHub Actions 的六個 job 全綠，特別確認 `e2e` job 通過 — **全綠**：Build 23s, E2E **49s**, Format 20s, Lint 28s, Test 21s, Typecheck 25s
+- [ ] 8.6（選用）在 PR run 頁面驗證失敗路徑：另開一個 throwaway commit 刻意把斷言改錯，push 後確認 `playwright-report` artifact 可下載、trace 可播放；驗完後 `git reset --hard HEAD~1 && git push --force-with-lease`（或 revert commit）— **略過**：標記為選用，且需 force-push destructive 動作，auto mode 不自動執行；使用者可視需要手動驗證
+- [ ] 8.7 Review + merge PR 後，把 change 歸檔到 `openspec/changes/archive/` 並跑 `openspec validate`（由 `/opsx:archive` 處理）— **等使用者 review + merge 後再跑 `/opsx:archive`**
