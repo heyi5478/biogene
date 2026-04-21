@@ -14,19 +14,19 @@
 
 ## 2. 升級 Playwright 設定
 
-- [ ] 2.1 編輯 `frontend/playwright.config.ts`，加入 `fullyParallel: true`、`forbidOnly: !!process.env.CI`、`retries: process.env.CI ? 2 : 0`、`workers: process.env.CI ? 1 : undefined`、`timeout: 30_000`、`expect.timeout: 5_000`、`outputDir: './test-results'`
-- [ ] 2.2 在 `use` 物件補上 `trace: 'on-first-retry'`、`screenshot: 'only-on-failure'`、`video: 'retain-on-failure'`、`actionTimeout: 10_000`、`navigationTimeout: 15_000`（`baseURL` 保留既值）
-- [ ] 2.3 新增 `projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]`，並 import `devices` from `@playwright/test`
-- [ ] 2.4 在 `webServer` 物件補上 `timeout: 120_000`（`command`、`url`、`reuseExistingServer` 保留既值）
-- [ ] 2.5 在 `frontend/` 執行 `npm run typecheck` 確認 `playwright.config.ts` 無型別錯誤；執行 `npm run lint` 與 `npm run format:check` 確認無違規
-- [ ] 2.6 **Commit 2**：`git add frontend/playwright.config.ts`，訊息：`chore(e2e): upgrade playwright.config.ts with projects, trace, retries`
+- [x] 2.1 編輯 `frontend/playwright.config.ts`，加入 `fullyParallel: true`、`forbidOnly: !!process.env.CI`、`retries: process.env.CI ? 2 : 0`、`workers: process.env.CI ? 1 : undefined`、`timeout: 30_000`、`expect.timeout: 5_000`、`outputDir: './test-results'`
+- [x] 2.2 在 `use` 物件補上 `trace: 'on-first-retry'`、`screenshot: 'only-on-failure'`、`video: 'retain-on-failure'`、`actionTimeout: 10_000`、`navigationTimeout: 15_000`（`baseURL` 保留既值）
+- [x] 2.3 新增 `projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]`，並 import `devices` from `@playwright/test`
+- [x] 2.4 在 `webServer` 物件補上 `timeout: 120_000`（`command`、`url`、`reuseExistingServer` 保留既值）
+- [x] 2.5 在 `frontend/` 執行 `npm run typecheck` 確認 `playwright.config.ts` 無型別錯誤；執行 `npm run lint` 與 `npm run format:check` 確認無違規
+- [x] 2.6 **Commit 2**：`git add frontend/playwright.config.ts`，訊息：`chore(e2e): upgrade playwright.config.ts with projects, trace, retries`
 
 ## 3. 新增 npm scripts
 
-- [ ] 3.1 編輯 `frontend/package.json`，在 `scripts` 中新增 `"test:e2e": "playwright test"`、`"test:e2e:ui": "playwright test --ui"`、`"test:e2e:debug": "playwright test --debug"`、`"test:e2e:headed": "playwright test --headed"`、`"test:e2e:report": "playwright show-report"`（放在既有 `test:watch` 之後）
-- [ ] 3.2 確認既有 `test`（`vitest run`）與 `test:watch`（`vitest`）未被動到
-- [ ] 3.3 於 `frontend/` 執行 `npm run test:e2e` 驗證 `seed.spec.ts` 通過（Chromium 應自動安裝；若未安裝，先跑 `npx playwright install chromium`）
-- [ ] 3.4 **Commit 3**：`git add frontend/package.json`，訊息：`chore(e2e): add test:e2e scripts to package.json`
+- [x] 3.1 編輯 `frontend/package.json`，在 `scripts` 中新增 `"test:e2e": "playwright test"`、`"test:e2e:ui": "playwright test --ui"`、`"test:e2e:debug": "playwright test --debug"`、`"test:e2e:headed": "playwright test --headed"`、`"test:e2e:report": "playwright show-report"`（放在既有 `test:watch` 之後）
+- [x] 3.2 確認既有 `test`（`vitest run`）與 `test:watch`（`vitest`）未被動到
+- [x] 3.3 於 `frontend/` 執行 `npm run test:e2e` 驗證 `seed.spec.ts` 通過（Chromium 應自動安裝；若未安裝，先跑 `npx playwright install chromium`）
+- [x] 3.4 **Commit 3**：`git add frontend/package.json`，訊息：`chore(e2e): add test:e2e scripts to package.json`
 
 ## 4. 呼叫 Planner 產出測試計畫
 
