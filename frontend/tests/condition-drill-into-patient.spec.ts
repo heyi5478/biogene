@@ -20,7 +20,7 @@ test.describe('Condition query: drill into patient detail', () => {
     const targetRow = page.getByRole('row', { name: /A1234567/ });
     await targetRow.getByRole('button', { name: '查看' }).click();
 
-    await expect(page.getByText('A1234567')).toBeVisible();
+    await expect(page.getByText('A1234567').first()).toBeVisible();
     await expect(page.getByText('陳志明').first()).toBeVisible();
     await expect(
       page.getByRole('button', { name: '返回條件查詢結果' }),

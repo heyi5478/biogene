@@ -14,7 +14,7 @@ test.describe('Patient query: lookup by chart number', () => {
 
     await expect(page.getByText('林雅婷').first()).toBeVisible();
     await expect(page.getByText('B2345678').first()).toBeVisible();
-    await expect(page.getByText(/Phenylketonuria/)).toBeVisible();
+    await expect(page.getByText(/Phenylketonuria/).first()).toBeVisible();
 
     await page.getByRole('tab', { name: '檢驗' }).click();
 

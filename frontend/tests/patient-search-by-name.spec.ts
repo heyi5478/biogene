@@ -14,7 +14,7 @@ test.describe('Patient query: search by name', () => {
     await page.getByPlaceholder('輸入病人姓名或病歷號').fill('陳志明');
     await page.getByRole('button', { name: '搜尋' }).click();
 
-    await expect(page.getByText('A1234567')).toBeVisible();
+    await expect(page.getByText('A1234567').first()).toBeVisible();
     await expect(page.getByText('陳志明').first()).toBeVisible();
 
     await expect(page.getByRole('tab', { name: '全部' })).toBeVisible();

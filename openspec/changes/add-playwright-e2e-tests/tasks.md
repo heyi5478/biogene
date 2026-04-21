@@ -50,13 +50,11 @@
 
 ## 6. 呼叫 Healer 修綠測試
 
-- [ ] 6.1 於 `frontend/` 執行 `npm run test:e2e`，記錄失敗清單
-- [ ] 6.2 若有失敗，叫 Healer 修復；Healer 會讀 trace + screenshot + video 推論選擇器或等待條件的修正
-- [ ] 6.3 Healer 修完後再跑 `npm run test:e2e` 驗證
-- [ ] 6.4 若 Healer 對 Radix Select / Accordion 的 portal 渲染問題反覆修不好：
-  - 在 `tests/helpers.ts`（若 Generator 已產生）加入 `disableAnimations(page)` 透過 `page.addStyleTag` 注入 `*,*::before,*::after{animation:none!important;transition:none!important}`
-  - 或改用 `page.getByRole('option', ...)` 明確尋找 portal 內的選項
-- [ ] 6.5 **Commit 6**（僅在 Healer 或人工有實際改動時）：`git add frontend/tests/ frontend/playwright.config.ts` 視實際變更範圍，訊息：`test(e2e): apply Healer fixes for selector and timing stability`；若 Step 6.1 已全綠、完全沒改東西，跳過此 commit
+- [x] 6.1 於 `frontend/` 執行 `npm run test:e2e`，記錄失敗清單 — 3 失敗：`patient-search-by-name`, `patient-lookup-by-chartno`, `condition-drill-into-patient` 均為 `getByText` strict-mode 違反（同字串在病人摘要頂端與「全部」tab 內各出現一次）
+- [x] 6.2 若有失敗，叫 Healer 修復 — 同 Section 4/5 之 MCP 限制；本人手動依 trace 訊息將三處 `getByText('A1234567' / /Phenylketonuria/)` 加上 `.first()`
+- [x] 6.3 Healer 修完後再跑 `npm run test:e2e` 驗證 — **7 passed**（含 seed.spec.ts）
+- [x] 6.4 若 Healer 對 Radix Select / Accordion 的 portal 渲染問題反覆修不好：未觸發此情境，本次測試未操作 Radix Select；不需要 helpers.ts
+- [x] 6.5 **Commit 6**（僅在 Healer 或人工有實際改動時）：`git add frontend/tests/ frontend/playwright.config.ts` 視實際變更範圍，訊息：`test(e2e): apply Healer fixes for selector and timing stability`
 
 ## 7. 驗證
 
