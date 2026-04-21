@@ -65,8 +65,8 @@ export function ConditionResults({
           </span>{' '}
           位病人
         </span>
-        {conditionChips.map((chip, i) => (
-          <Badge key={i} variant="secondary" className="h-5 text-[10px]">
+        {conditionChips.map((chip) => (
+          <Badge key={chip} variant="secondary" className="h-5 text-[10px]">
             {chip}
           </Badge>
         ))}
@@ -110,9 +110,9 @@ export function ConditionResults({
                     {patient.diagnosis}
                   </TableCell>
                   <TableCell className="text-[10px] text-muted-foreground">
-                    {hitSummary.map((s, i) => (
+                    {hitSummary.map((s) => (
                       <Badge
-                        key={i}
+                        key={s}
                         variant="outline"
                         className="mb-0.5 mr-1 h-4 text-[9px]"
                       >
@@ -213,9 +213,10 @@ function evalCondition(
         return Number(val) < Number(row.value);
       case 'lte':
         return Number(val) <= Number(row.value);
-      case 'between':
+      case 'between': {
         const n = Number(val);
         return n >= Number(row.value) && n <= Number(row.value2);
+      }
       case 'after':
         return String(val) > row.value;
       case 'before':

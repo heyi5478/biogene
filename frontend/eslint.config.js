@@ -7,11 +7,11 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const configFilename = fileURLToPath(import.meta.url);
+const configDirname = path.dirname(configFilename);
 
 const compat = new FlatCompat({
-  baseDirectory: __dirname,
+  baseDirectory: configDirname,
   recommendedConfig: js.configs.recommended,
 });
 
@@ -48,7 +48,7 @@ export default tseslint.config(
             'tests/seed.spec.ts',
           ],
         },
-        tsconfigRootDir: __dirname,
+        tsconfigRootDir: configDirname,
       },
     },
     plugins: {
@@ -89,7 +89,7 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 0,
       '@typescript-eslint/no-use-before-define': [
         'error',
-        { variables: false },
+        { variables: false, functions: false },
       ],
       '@typescript-eslint/no-var-requires': 0,
       '@typescript-eslint/ban-ts-comment': 0,
@@ -121,6 +121,10 @@ export default tseslint.config(
       ],
 
       '@typescript-eslint/no-unused-vars': 'off',
+      'no-irregular-whitespace': [
+        'error',
+        { skipStrings: true, skipJSXText: true },
+      ],
     },
   },
 );

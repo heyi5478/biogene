@@ -15,7 +15,7 @@ function calcAge(birthday: string): number {
   const birth = new Date(birthday);
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age -= 1;
   return age;
 }
 
