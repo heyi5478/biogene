@@ -23,12 +23,20 @@ export interface ModuleInfo {
   group: 'patient' | 'disease' | 'lab' | 'specimen';
 }
 
+export type PatientSource = 'main' | 'external' | 'nbs';
+
 export interface Patient {
-  chartno: string;
+  patientId: string;
+  source: PatientSource;
+  chartno?: string;
+  externalChartno?: string;
+  nbsId?: string;
+  category?: string;
+  linkedPatientIds?: string[];
   name: string;
   birthday: string;
   sex: '男' | '女';
-  diagnosis: string;
+  diagnosis?: string;
   diagnosis2?: string;
   diagnosis3?: string;
   opd: OpdRecord[];
@@ -44,6 +52,11 @@ export interface Patient {
   gag: GagSample[];
   dnabank: DnabankRecord[];
   outbank: OutbankRecord[];
+  bd: BdSample[];
+  cah: CahSample[];
+  dmd: DmdSample[];
+  g6pd: G6pdSample[];
+  smaScid: SmaScidSample[];
 }
 
 export interface OpdRecord {
