@@ -178,6 +178,16 @@ function getModuleData(
       return patient.dnabank;
     case 'outbank':
       return patient.outbank;
+    case 'bd':
+      return patient.bd;
+    case 'cah':
+      return patient.cah;
+    case 'dmd':
+      return patient.dmd;
+    case 'g6pd':
+      return patient.g6pd;
+    case 'smaScid':
+      return patient.smaScid;
     default:
       return [];
   }
