@@ -1,0 +1,16 @@
+[
+  {
+    "patientId": "c42f6fdc-c4c6-5ef3-9f1e-f64b6fc04d4e",
+    "sampleName": "NBS-AA-0002",
+    "specimenType": "Plasma",
+    "result": "Normal",
+    "Gln": 490,
+    "Citr": 27,
+    "Ala": 305,
+    "Arg": 80,
+    "Leu": 118,
+    "Val": 186,
+    "Phe": 55,
+    "Tyr": 58
+  }
+]

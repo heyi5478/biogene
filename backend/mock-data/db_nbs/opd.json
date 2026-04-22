@@ -1,0 +1,19 @@
+[
+  {
+    "patientId": "49ba8dc6-8bca-5559-9cd4-beb9e3a14a57",
+    "visitDate": "2025-02-10",
+    "sex": "男",
+    "birthday": "2025-01-05",
+    "diagCode": "Z13.228",
+    "diagName": "NBS follow-up"
+  },
+  {
+    "patientId": "3bff3cba-9011-5366-a458-bf862432ebc7",
+    "visitDate": "2025-04-05",
+    "sex": "女",
+    "birthday": "2025-03-27",
+    "diagCode": "Z13.228",
+    "diagName": "NBS follow-up",
+    "subDiag1": "Self-pay extended panel"
+  }
+]

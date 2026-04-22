@@ -1,0 +1,9 @@
+[
+  {
+    "dmdId": "NBS-DMD-0002",
+    "sampleId": "NBS-TSH-0002a",
+    "collectDate": "2025-02-28",
+    "tsh": 5.8,
+    "result": "Normal"
+  }
+]

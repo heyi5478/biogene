@@ -1,0 +1,23 @@
+[
+  {
+    "patientId": "49ba8dc6-8bca-5559-9cd4-beb9e3a14a57",
+    "sampleId": "NBS-G6PD-0001",
+    "collectDate": "2025-01-08",
+    "result": "Normal",
+    "g6pdActivity": 12.8
+  },
+  {
+    "patientId": "3bff3cba-9011-5366-a458-bf862432ebc7",
+    "sampleId": "NBS-G6PD-0004",
+    "collectDate": "2025-04-01",
+    "result": "Abnormal",
+    "g6pdActivity": 1.5
+  },
+  {
+    "patientId": "95891bef-04d6-565c-9117-ce75b607f716",
+    "sampleId": "NBS-G6PD-0005",
+    "collectDate": "2025-04-05",
+    "result": "Normal",
+    "g6pdActivity": 14.2
+  }
+]

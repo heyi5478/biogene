@@ -1,0 +1,52 @@
+[
+  {
+    "patientId": "49ba8dc6-8bca-5559-9cd4-beb9e3a14a57",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0001",
+    "name": "新篩嬰001",
+    "birthday": "2025-01-05",
+    "sex": "男",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "c42f6fdc-c4c6-5ef3-9f1e-f64b6fc04d4e",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0002",
+    "name": "新篩嬰002",
+    "birthday": "2025-02-18",
+    "sex": "女",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "d0393571-65ca-5878-b622-41320c414af1",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0003",
+    "name": "新篩嬰003",
+    "birthday": "2025-03-11",
+    "sex": "男",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "3bff3cba-9011-5366-a458-bf862432ebc7",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0004",
+    "name": "新篩嬰004",
+    "birthday": "2025-03-27",
+    "sex": "女",
+    "category": "self_pay",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "95891bef-04d6-565c-9117-ce75b607f716",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0005",
+    "name": "新篩嬰005",
+    "birthday": "2025-04-02",
+    "sex": "男",
+    "category": "nbs",
+    "linkedPatientIds": []
+  }
+]
