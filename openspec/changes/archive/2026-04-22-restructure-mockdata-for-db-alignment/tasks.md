@@ -65,5 +65,5 @@
 
 - [x] 8.1 推上分支：`git push -u origin feat/restructure-mockdata-for-api`
 - [x] 8.2 用 `gh pr create` 開 PR，body 引用本 change：`See openspec/changes/restructure-mockdata-for-db-alignment/`
-- [ ] 8.3 PR 通過 CI（lint、type-check、build、test、e2e、load_mock）後 merge
-- [ ] 8.4 Merge 後執行 `/opsx:archive restructure-mockdata-for-db-alignment` 歸檔
+- [x] 8.3 PR 通過 CI（lint、type-check、build、test、e2e、load_mock）後 merge
+- [x] 8.4 Merge 後執行 `/opsx:archive restructure-mockdata-for-db-alignment` 歸檔
