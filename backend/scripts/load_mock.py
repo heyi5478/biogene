@@ -6,11 +6,16 @@ Usage:
 
 Exits non-zero on dangling FK. Prints per-table row counts.
 
-API:
-    load_all() -> dict[db_name, dict[table_name, list[row_dict]]]
+Public API (stable, consumed by FastAPI services via `backend.shared.data_loader`):
+    load_all() -> dict[str, dict[str, list[dict]]]
+        Return the full mock dataset keyed by database -> table -> rows.
 
-Intended to be imported by FastAPI services at startup to populate
-in-memory repositories. Uses only the Python standard library.
+    validate(data: dict | None = None) -> None
+        If `data` is None, call `load_all()` first. Raise `ValueError`
+        describing the offending database/table/row/field on any FK violation.
+        Return `None` on success.
+
+Standard library only (no third-party deps).
 """
 
 from __future__ import annotations
@@ -33,7 +38,13 @@ SUB_TABLE_FKS: dict[str, list[tuple[str, str, str, str]]] = {
 
 
 def load_all() -> dict[str, dict[str, list[dict]]]:
-    """Read every JSON file under backend/mock-data/ into nested dicts."""
+    """Read every JSON file under backend/mock-data/ into nested dicts.
+
+    Returns
+    -------
+    dict
+        Shape ``{database_name: {table_name: [row_dict, ...]}}``.
+    """
     data: dict[str, dict[str, list[dict]]] = {}
     for db in DB_DIRS:
         db_path = ROOT / db
@@ -49,8 +60,8 @@ def load_all() -> dict[str, dict[str, list[dict]]]:
     return data
 
 
-def validate(data: dict[str, dict[str, list[dict]]]) -> list[str]:
-    """Return a list of FK-violation error messages (empty == OK)."""
+def _find_fk_errors(data: dict[str, dict[str, list[dict]]]) -> list[str]:
+    """Return FK-violation messages (empty list == OK)."""
     errors: list[str] = []
 
     for db, tables in data.items():
@@ -90,9 +101,33 @@ def validate(data: dict[str, dict[str, list[dict]]]) -> list[str]:
     return errors
 
 
+def validate(data: dict[str, dict[str, list[dict]]] | None = None) -> None:
+    """Validate FK integrity across all mock databases.
+
+    Parameters
+    ----------
+    data
+        Pre-loaded dataset returned by :func:`load_all`. If ``None``, this
+        function calls :func:`load_all` itself.
+
+    Raises
+    ------
+    ValueError
+        When any FK constraint fails. The message lists every offending
+        ``database/table.json`` row and field.
+    """
+    if data is None:
+        data = load_all()
+    errors = _find_fk_errors(data)
+    if errors:
+        raise ValueError(
+            "mock-data FK validation failed:\n  - " + "\n  - ".join(errors)
+        )
+
+
 def main() -> int:
     data = load_all()
-    errors = validate(data)
+    errors = _find_fk_errors(data)
 
     for db in DB_DIRS:
         tables = data.get(db, {})

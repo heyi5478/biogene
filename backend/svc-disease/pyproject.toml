@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "svc-disease"
+version = "0.1.0"
+description = "Disease-module microservice (AADC/ALD/MMA/MPS2/LSD/enzyme/GAG/BD/CAH/DMD/G6PD/SMA-SCID) on port 8003."
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.0",
+    "shared",
+]
+
+[tool.uv.sources]
+shared = { path = "../shared", editable = true }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["svc_disease*"]
