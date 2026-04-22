@@ -97,9 +97,9 @@ export function ConditionResults({
             </TableHeader>
             <TableBody>
               {matchedPatients.map(({ patient, hitSummary }) => (
-                <TableRow key={patient.chartno} className="hover:bg-accent/30">
+                <TableRow key={patient.patientId} className="hover:bg-accent/30">
                   <TableCell className="font-mono text-xs">
-                    {patient.chartno}
+                    {patient.chartno ?? patient.externalChartno ?? patient.nbsId ?? '—'}
                   </TableCell>
                   <TableCell className="text-xs font-medium">
                     {patient.name}
@@ -107,7 +107,7 @@ export function ConditionResults({
                   <TableCell className="text-xs">{patient.sex}</TableCell>
                   <TableCell className="text-xs">{patient.birthday}</TableCell>
                   <TableCell className="max-w-[200px] truncate text-xs">
-                    {patient.diagnosis}
+                    {patient.diagnosis ?? '—'}
                   </TableCell>
                   <TableCell className="text-[10px] text-muted-foreground">
                     {hitSummary.map((s) => (

@@ -136,8 +136,14 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
           <div className="grid grid-cols-3 gap-x-6 gap-y-2 px-3 py-3 text-xs">
             <div>
               <span className="text-muted-foreground">病歷號　</span>
-              <span className="font-mono-medical">{patient.chartno}</span>{' '}
-              <CopyBtn text={patient.chartno} />
+              <span className="font-mono-medical">
+                {patient.chartno ?? patient.externalChartno ?? patient.nbsId ?? '—'}
+              </span>{' '}
+              <CopyBtn
+                text={
+                  patient.chartno ?? patient.externalChartno ?? patient.nbsId ?? ''
+                }
+              />
             </div>
             <div>
               <span className="text-muted-foreground">生日　</span>
@@ -149,7 +155,7 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
             </div>
             <div className="col-span-3">
               <span className="text-muted-foreground">主診斷　</span>
-              <span className="font-medium">{patient.diagnosis}</span>
+              <span className="font-medium">{patient.diagnosis ?? '—'}</span>
             </div>
             {patient.diagnosis2 && (
               <div className="col-span-3">

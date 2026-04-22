@@ -51,6 +51,8 @@ interface PatientSummaryProps {
 
 export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
   const age = calcAge(patient.birthday);
+  const displayChartno =
+    patient.chartno ?? patient.externalChartno ?? patient.nbsId ?? '—';
   const hasDna = patient.dnabank.length > 0;
   const hasOutbank = patient.outbank.length > 0;
   const lastVisit =
@@ -80,8 +82,8 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
                 {patient.name}
               </h2>
               <div className="font-mono-medical flex items-center gap-1 text-muted-foreground">
-                <span>{patient.chartno}</span>
-                <CopyButton text={patient.chartno} />
+                <span>{displayChartno}</span>
+                <CopyButton text={displayChartno} />
               </div>
               <Badge variant="outline" className="h-5 text-[10px]">
                 {patient.sex}
@@ -95,7 +97,7 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
             <div className="mb-3 space-y-0.5">
               <div className="text-xs">
                 <span className="mr-1.5 text-muted-foreground">主診斷</span>
-                <span className="font-medium">{patient.diagnosis}</span>
+                <span className="font-medium">{patient.diagnosis ?? '—'}</span>
               </div>
               {patient.diagnosis2 && (
                 <div className="text-xs">
@@ -169,21 +171,21 @@ export function PatientList({ patients, onSelect }: PatientListProps) {
       </p>
       {patients.map((p) => (
         <button
-          key={p.chartno}
+          key={p.patientId}
           onClick={() => onSelect(p)}
           className="w-full rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-accent/50"
         >
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold">{p.name}</span>
             <span className="font-mono-medical text-xs text-muted-foreground">
-              {p.chartno}
+              {p.chartno ?? p.externalChartno ?? p.nbsId ?? '—'}
             </span>
             <Badge variant="outline" className="h-4 text-[10px]">
               {p.sex}
             </Badge>
             <span className="text-xs text-muted-foreground">{p.birthday}</span>
             <span className="ml-auto max-w-[300px] truncate text-xs text-muted-foreground">
-              {p.diagnosis}
+              {p.diagnosis ?? '—'}
             </span>
           </div>
         </button>
