@@ -52,14 +52,14 @@
 - [x] 7.3 `npm run build` 成功
 - [x] 7.4 `npm run test` 通過（既有 vitest 測試）
 - [x] 7.5 `python backend/scripts/load_mock.py` exit 0、所有 FK OK
-- [ ] 7.6 `npm run dev` 啟動後手動煙霧測試：
-    - [ ] 7.6.1 搜尋「陳志明」→ 出現
-    - [ ] 7.6.2 搜尋 NBS 病人姓名 → 出現
-    - [ ] 7.6.3 搜尋 external 病人 `externalChartno` → 出現
-    - [ ] 7.6.4 condition template「Biomarker 異常」→ 命中數與 main 分支相同
-    - [ ] 7.6.5 新 condition `bd / biotinidaseActivity < 5` → 命中 NBS 紀錄
-    - [ ] 7.6.6 切換到 'nbs' tab → 只顯示 5 個 NBS 模組
-    - [ ] 7.6.7 開啟一位有 cah+tgal 資料的病人 → tgal 渲染為 cah 下方 nested rows
+- [x] 7.6 `npm run dev` 啟動後手動煙霧測試：
+    - [x] 7.6.1 搜尋「陳志明」→ 出現
+    - [x] 7.6.2 搜尋 NBS 病人姓名 → 出現
+    - [x] 7.6.3 搜尋 external 病人 `externalChartno` → 出現
+    - [x] 7.6.4 condition template「Biomarker 異常」→ 命中數與 main 分支相同
+    - [x] 7.6.5 新 condition `bd / biotinidaseActivity < 5` → 命中 NBS 紀錄
+    - [x] 7.6.6 切換到 'nbs' tab → 只顯示 5 個 NBS 模組
+    - [x] 7.6.7 開啟一位有 cah+tgal 資料的病人 → tgal 渲染為 cah 下方 nested rows
 
 ## 8. Pull request
 
