@@ -71,11 +71,11 @@ function groupByPatient<T extends { patientId: string }>(
   rows: T[],
 ): Map<string, T[]> {
   const map = new Map<string, T[]>();
-  for (const row of rows) {
+  rows.forEach((row) => {
     const list = map.get(row.patientId);
     if (list) list.push(row);
     else map.set(row.patientId, [row]);
-  }
+  });
   return map;
 }
 
@@ -160,12 +160,12 @@ function joinCahTgal(
   tgalRows: (TgalSubSample & { cahId: string })[],
 ): WithPatientId<CahSample>[] {
   const tgalByCah = new Map<string, TgalSubSample[]>();
-  for (const row of tgalRows) {
+  tgalRows.forEach((row) => {
     const { cahId, ...rest } = row;
     const list = tgalByCah.get(cahId);
     if (list) list.push(rest);
     else tgalByCah.set(cahId, [rest]);
-  }
+  });
   return cahRows.map((cah) => ({
     ...cah,
     tgal: tgalByCah.get(cah.cahId) ?? [],
@@ -178,12 +178,12 @@ function joinDmdTsh(
   tshRows: (TshSubSample & { dmdId: string })[],
 ): WithPatientId<DmdSample>[] {
   const tshByDmd = new Map<string, TshSubSample[]>();
-  for (const row of tshRows) {
+  tshRows.forEach((row) => {
     const { dmdId, ...rest } = row;
     const list = tshByDmd.get(dmdId);
     if (list) list.push(rest);
     else tshByDmd.set(dmdId, [rest]);
-  }
+  });
   return dmdRows.map((dmd) => ({
     ...dmd,
     tsh: tshByDmd.get(dmd.dmdId) ?? [],
@@ -204,7 +204,9 @@ const mainPatients: Patient[] = (mainPatient as PatientRow[]).map((p) =>
     opd: groupByPatient(mainOpd as WithPatientId<OpdRecord>[]),
     aa: groupByPatient(mainAa as WithPatientId<AaSample>[]),
     msms: groupByPatient(mainMsms as WithPatientId<MsmsSample>[]),
-    biomarker: groupByPatient(mainBiomarker as WithPatientId<BiomarkerSample>[]),
+    biomarker: groupByPatient(
+      mainBiomarker as WithPatientId<BiomarkerSample>[],
+    ),
     aadc: groupByPatient(mainAadc as WithPatientId<AadcSample>[]),
     ald: groupByPatient(mainAld as WithPatientId<AldSample>[]),
     mma: groupByPatient(mainMma as WithPatientId<MmaSample>[]),

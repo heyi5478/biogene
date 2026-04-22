@@ -137,11 +137,17 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
             <div>
               <span className="text-muted-foreground">病歷號　</span>
               <span className="font-mono-medical">
-                {patient.chartno ?? patient.externalChartno ?? patient.nbsId ?? '—'}
+                {patient.chartno ??
+                  patient.externalChartno ??
+                  patient.nbsId ??
+                  '—'}
               </span>{' '}
               <CopyBtn
                 text={
-                  patient.chartno ?? patient.externalChartno ?? patient.nbsId ?? ''
+                  patient.chartno ??
+                  patient.externalChartno ??
+                  patient.nbsId ??
+                  ''
                 }
               />
             </div>
@@ -534,7 +540,11 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
 
       {/* BD (Biotinidase deficiency) */}
       {show('bd') && patient.bd.length > 0 && (
-        <ModuleSection id="bd" title="BD（Biotinidase deficiency）" count={patient.bd.length}>
+        <ModuleSection
+          id="bd"
+          title="BD（Biotinidase deficiency）"
+          count={patient.bd.length}
+        >
           <MedicalTable
             headers={['Sample ID', '採檢日期', 'Result', 'Biotinidase 活性']}
             rows={patient.bd.map((r) => [
@@ -557,7 +567,11 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
 
       {/* CAH (with tgal sub-rows) */}
       {show('cah') && patient.cah.length > 0 && (
-        <ModuleSection id="cah" title="CAH（Congenital adrenal hyperplasia）" count={patient.cah.length}>
+        <ModuleSection
+          id="cah"
+          title="CAH（Congenital adrenal hyperplasia）"
+          count={patient.cah.length}
+        >
           <div className="space-y-2 px-2 py-2">
             {patient.cah.map((r) => (
               <div key={r.cahId} className="rounded-md border bg-background">
@@ -571,7 +585,9 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
                       r.collectDate,
                       <Badge
                         key="result"
-                        variant={r.result === 'Abnormal' ? 'destructive' : 'secondary'}
+                        variant={
+                          r.result === 'Abnormal' ? 'destructive' : 'secondary'
+                        }
                         className="h-4 text-[10px]"
                       >
                         {r.result}
@@ -586,7 +602,12 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
                       tgal 加驗
                     </div>
                     <MedicalTable
-                      headers={['Sub Sample ID', '採檢日期', 'Total Galactose', 'Result']}
+                      headers={[
+                        'Sub Sample ID',
+                        '採檢日期',
+                        'Total Galactose',
+                        'Result',
+                      ]}
                       rows={r.tgal.map((t) => [
                         <span key="sampleId" className="font-mono-medical">
                           {t.sampleId}
@@ -595,7 +616,11 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
                         <MonoVal key="totalGalactose" val={t.totalGalactose} />,
                         <Badge
                           key="result"
-                          variant={t.result === 'Abnormal' ? 'destructive' : 'secondary'}
+                          variant={
+                            t.result === 'Abnormal'
+                              ? 'destructive'
+                              : 'secondary'
+                          }
                           className="h-4 text-[10px]"
                         >
                           {t.result}
@@ -612,7 +637,11 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
 
       {/* DMD (with tsh sub-rows) */}
       {show('dmd') && patient.dmd.length > 0 && (
-        <ModuleSection id="dmd" title="DMD（Duchenne muscular dystrophy）" count={patient.dmd.length}>
+        <ModuleSection
+          id="dmd"
+          title="DMD（Duchenne muscular dystrophy）"
+          count={patient.dmd.length}
+        >
           <div className="space-y-2 px-2 py-2">
             {patient.dmd.map((r) => (
               <div key={r.dmdId} className="rounded-md border bg-background">
@@ -626,7 +655,9 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
                       r.collectDate,
                       <Badge
                         key="result"
-                        variant={r.result === 'Abnormal' ? 'destructive' : 'secondary'}
+                        variant={
+                          r.result === 'Abnormal' ? 'destructive' : 'secondary'
+                        }
                         className="h-4 text-[10px]"
                       >
                         {r.result}
@@ -650,7 +681,11 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
                         <MonoVal key="tsh" val={t.tsh} />,
                         <Badge
                           key="result"
-                          variant={t.result === 'Abnormal' ? 'destructive' : 'secondary'}
+                          variant={
+                            t.result === 'Abnormal'
+                              ? 'destructive'
+                              : 'secondary'
+                          }
                           className="h-4 text-[10px]"
                         >
                           {t.result}
@@ -667,7 +702,11 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
 
       {/* G6PD */}
       {show('g6pd') && patient.g6pd.length > 0 && (
-        <ModuleSection id="g6pd" title="G6PD deficiency" count={patient.g6pd.length}>
+        <ModuleSection
+          id="g6pd"
+          title="G6PD deficiency"
+          count={patient.g6pd.length}
+        >
           <MedicalTable
             headers={['Sample ID', '採檢日期', 'Result', 'G6PD 活性']}
             rows={patient.g6pd.map((r) => [
@@ -690,7 +729,11 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
 
       {/* SMA / SCID */}
       {show('smaScid') && patient.smaScid.length > 0 && (
-        <ModuleSection id="smaScid" title="SMA / SCID" count={patient.smaScid.length}>
+        <ModuleSection
+          id="smaScid"
+          title="SMA / SCID"
+          count={patient.smaScid.length}
+        >
           <MedicalTable
             headers={['Sample ID', '採檢日期', 'Result', 'SMN1 Copies', 'TREC']}
             rows={patient.smaScid.map((r) => [

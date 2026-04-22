@@ -97,9 +97,15 @@ export function ConditionResults({
             </TableHeader>
             <TableBody>
               {matchedPatients.map(({ patient, hitSummary }) => (
-                <TableRow key={patient.patientId} className="hover:bg-accent/30">
+                <TableRow
+                  key={patient.patientId}
+                  className="hover:bg-accent/30"
+                >
                   <TableCell className="font-mono text-xs">
-                    {patient.chartno ?? patient.externalChartno ?? patient.nbsId ?? '—'}
+                    {patient.chartno ??
+                      patient.externalChartno ??
+                      patient.nbsId ??
+                      '—'}
                   </TableCell>
                   <TableCell className="text-xs font-medium">
                     {patient.name}
