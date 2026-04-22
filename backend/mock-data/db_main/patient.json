@@ -1,0 +1,58 @@
+[
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "source": "main",
+    "chartno": "A1234567",
+    "name": "陳志明",
+    "birthday": "1985-03-15",
+    "sex": "男",
+    "diagnosis": "Fabry disease (E75.21)",
+    "diagnosis2": "Chronic kidney disease, stage 3 (N18.3)",
+    "diagnosis3": "Left ventricular hypertrophy (I51.7)",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "0083197f-74b9-566b-8944-1e847deea242",
+    "source": "main",
+    "chartno": "B2345678",
+    "name": "林雅婷",
+    "birthday": "2018-07-22",
+    "sex": "女",
+    "diagnosis": "Phenylketonuria (E70.0)",
+    "diagnosis2": "Developmental delay (F88)",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "source": "main",
+    "chartno": "C3456789",
+    "name": "張偉翔",
+    "birthday": "2020-01-08",
+    "sex": "男",
+    "diagnosis": "Mucopolysaccharidosis type II (E76.1)",
+    "diagnosis2": "Hepatosplenomegaly (R16.2)",
+    "diagnosis3": "Hearing loss (H91.9)",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "da34c89c-0452-5fbb-8c95-7c31976eb42e",
+    "source": "main",
+    "chartno": "D4567890",
+    "name": "黃淑芬",
+    "birthday": "1992-11-03",
+    "sex": "女",
+    "diagnosis": "Gaucher disease type 1 (E75.22)",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "756bcb48-4064-53e5-9dad-76e9c3fae071",
+    "source": "main",
+    "chartno": "E5678901",
+    "name": "王建國",
+    "birthday": "2015-05-18",
+    "sex": "男",
+    "diagnosis": "AADC deficiency (E70.8)",
+    "diagnosis2": "Dystonia (G24.9)",
+    "linkedPatientIds": []
+  }
+]

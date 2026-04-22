@@ -1,0 +1,32 @@
+[
+  {
+    "patientId": "8aa80c48-51f7-5104-a122-c3d3d5ac50e0",
+    "source": "external",
+    "externalChartno": "X-HSPH-1001",
+    "name": "外院001",
+    "birthday": "1978-02-14",
+    "sex": "男",
+    "diagnosis": "Pompe disease (E74.02)",
+    "category": "opd_case",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "e388c6fd-39d9-5a73-b9a6-9e53f4af435c",
+    "source": "external",
+    "externalChartno": "X-KMUH-2044",
+    "name": "外院002",
+    "birthday": "2001-10-30",
+    "sex": "女",
+    "diagnosis": "Krabbe disease (E75.23)",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "d845c1da-5d37-5bc1-a6da-ec9702cab0a3",
+    "source": "external",
+    "externalChartno": "X-NTUH-3150",
+    "name": "外院003",
+    "birthday": "1995-06-07",
+    "sex": "男",
+    "linkedPatientIds": []
+  }
+]

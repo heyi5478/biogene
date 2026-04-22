@@ -1,0 +1,14 @@
+[
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "sampleName": "MMA-2025-0067",
+    "conc": 0.32,
+    "date": "2025-10-15"
+  },
+  {
+    "patientId": "0083197f-74b9-566b-8944-1e847deea242",
+    "sampleName": "MMA-2025-0095",
+    "conc": 0.28,
+    "date": "2025-09-20"
+  }
+]

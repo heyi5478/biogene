@@ -1,0 +1,23 @@
+[
+  {
+    "patientId": "49ba8dc6-8bca-5559-9cd4-beb9e3a14a57",
+    "sampleId": "NBS-BD-0001",
+    "collectDate": "2025-01-08",
+    "result": "Normal",
+    "biotinidaseActivity": 78.5
+  },
+  {
+    "patientId": "c42f6fdc-c4c6-5ef3-9f1e-f64b6fc04d4e",
+    "sampleId": "NBS-BD-0002",
+    "collectDate": "2025-02-21",
+    "result": "Abnormal",
+    "biotinidaseActivity": 3.8
+  },
+  {
+    "patientId": "d0393571-65ca-5878-b622-41320c414af1",
+    "sampleId": "NBS-BD-0003",
+    "collectDate": "2025-03-14",
+    "result": "Normal",
+    "biotinidaseActivity": 65.2
+  }
+]

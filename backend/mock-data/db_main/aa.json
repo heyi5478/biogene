@@ -1,0 +1,58 @@
+[
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "sampleName": "AA-2025-0412",
+    "specimenType": "Plasma",
+    "result": "Normal",
+    "Gln": 520,
+    "Citr": 28,
+    "Ala": 310,
+    "Arg": 85,
+    "Leu": 120,
+    "Val": 195,
+    "Phe": 52,
+    "Tyr": 58
+  },
+  {
+    "patientId": "0083197f-74b9-566b-8944-1e847deea242",
+    "sampleName": "AA-2025-0520",
+    "specimenType": "Plasma",
+    "result": "Abnormal",
+    "Gln": 480,
+    "Citr": 32,
+    "Ala": 295,
+    "Arg": 78,
+    "Leu": 115,
+    "Val": 188,
+    "Phe": 890,
+    "Tyr": 42
+  },
+  {
+    "patientId": "0083197f-74b9-566b-8944-1e847deea242",
+    "sampleName": "AA-2025-0318",
+    "specimenType": "Plasma",
+    "result": "Abnormal",
+    "Gln": 510,
+    "Citr": 30,
+    "Ala": 305,
+    "Arg": 82,
+    "Leu": 122,
+    "Val": 192,
+    "Phe": 1120,
+    "Tyr": 38
+  },
+  {
+    "patientId": "756bcb48-4064-53e5-9dad-76e9c3fae071",
+    "sampleName": "AA-2025-0610",
+    "specimenType": "CSF",
+    "result": "Abnormal",
+    "Gln": 380,
+    "Citr": 22,
+    "Ala": 245,
+    "Arg": 65,
+    "Leu": 98,
+    "Val": 165,
+    "Phe": 48,
+    "Tyr": 35
+  }
+]

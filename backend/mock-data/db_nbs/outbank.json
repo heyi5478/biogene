@@ -1,0 +1,16 @@
+[
+  {
+    "patientId": "c42f6fdc-c4c6-5ef3-9f1e-f64b6fc04d4e",
+    "sampleno": "NBS-OUT-0002",
+    "shipdate": "2025-03-01",
+    "assay": "DMD MLPA",
+    "result": "Exon 45 deletion"
+  },
+  {
+    "patientId": "95891bef-04d6-565c-9117-ce75b607f716",
+    "sampleno": "NBS-OUT-0005",
+    "shipdate": "2025-04-12",
+    "assay": "SMN1/SMN2 copy number",
+    "result": "SMN1 = 2, SMN2 = 1"
+  }
+]

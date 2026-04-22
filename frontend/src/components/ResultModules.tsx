@@ -136,8 +136,20 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
           <div className="grid grid-cols-3 gap-x-6 gap-y-2 px-3 py-3 text-xs">
             <div>
               <span className="text-muted-foreground">病歷號　</span>
-              <span className="font-mono-medical">{patient.chartno}</span>{' '}
-              <CopyBtn text={patient.chartno} />
+              <span className="font-mono-medical">
+                {patient.chartno ??
+                  patient.externalChartno ??
+                  patient.nbsId ??
+                  '—'}
+              </span>{' '}
+              <CopyBtn
+                text={
+                  patient.chartno ??
+                  patient.externalChartno ??
+                  patient.nbsId ??
+                  ''
+                }
+              />
             </div>
             <div>
               <span className="text-muted-foreground">生日　</span>
@@ -149,7 +161,7 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
             </div>
             <div className="col-span-3">
               <span className="text-muted-foreground">主診斷　</span>
-              <span className="font-medium">{patient.diagnosis}</span>
+              <span className="font-medium">{patient.diagnosis ?? '—'}</span>
             </div>
             {patient.diagnosis2 && (
               <div className="col-span-3">
@@ -526,6 +538,223 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
         </ModuleSection>
       )}
 
+      {/* BD (Biotinidase deficiency) */}
+      {show('bd') && patient.bd.length > 0 && (
+        <ModuleSection
+          id="bd"
+          title="BD（Biotinidase deficiency）"
+          count={patient.bd.length}
+        >
+          <MedicalTable
+            headers={['Sample ID', '採檢日期', 'Result', 'Biotinidase 活性']}
+            rows={patient.bd.map((r) => [
+              <span key="sampleId" className="font-mono-medical">
+                {r.sampleId}
+              </span>,
+              r.collectDate,
+              <Badge
+                key="result"
+                variant={r.result === 'Abnormal' ? 'destructive' : 'secondary'}
+                className="h-4 text-[10px]"
+              >
+                {r.result}
+              </Badge>,
+              <MonoVal key="biotinidaseActivity" val={r.biotinidaseActivity} />,
+            ])}
+          />
+        </ModuleSection>
+      )}
+
+      {/* CAH (with tgal sub-rows) */}
+      {show('cah') && patient.cah.length > 0 && (
+        <ModuleSection
+          id="cah"
+          title="CAH（Congenital adrenal hyperplasia）"
+          count={patient.cah.length}
+        >
+          <div className="space-y-2 px-2 py-2">
+            {patient.cah.map((r) => (
+              <div key={r.cahId} className="rounded-md border bg-background">
+                <MedicalTable
+                  headers={['Sample ID', '採檢日期', 'Result', '17-OHP']}
+                  rows={[
+                    [
+                      <span key="sampleId" className="font-mono-medical">
+                        {r.sampleId}
+                      </span>,
+                      r.collectDate,
+                      <Badge
+                        key="result"
+                        variant={
+                          r.result === 'Abnormal' ? 'destructive' : 'secondary'
+                        }
+                        className="h-4 text-[10px]"
+                      >
+                        {r.result}
+                      </Badge>,
+                      <MonoVal key="ohp17" val={r.ohp17} />,
+                    ],
+                  ]}
+                />
+                {r.tgal && r.tgal.length > 0 && (
+                  <div className="border-t bg-muted/20 px-3 py-2">
+                    <div className="mb-1 text-[10px] font-medium text-muted-foreground">
+                      tgal 加驗
+                    </div>
+                    <MedicalTable
+                      headers={[
+                        'Sub Sample ID',
+                        '採檢日期',
+                        'Total Galactose',
+                        'Result',
+                      ]}
+                      rows={r.tgal.map((t) => [
+                        <span key="sampleId" className="font-mono-medical">
+                          {t.sampleId}
+                        </span>,
+                        t.collectDate,
+                        <MonoVal key="totalGalactose" val={t.totalGalactose} />,
+                        <Badge
+                          key="result"
+                          variant={
+                            t.result === 'Abnormal'
+                              ? 'destructive'
+                              : 'secondary'
+                          }
+                          className="h-4 text-[10px]"
+                        >
+                          {t.result}
+                        </Badge>,
+                      ])}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </ModuleSection>
+      )}
+
+      {/* DMD (with tsh sub-rows) */}
+      {show('dmd') && patient.dmd.length > 0 && (
+        <ModuleSection
+          id="dmd"
+          title="DMD（Duchenne muscular dystrophy）"
+          count={patient.dmd.length}
+        >
+          <div className="space-y-2 px-2 py-2">
+            {patient.dmd.map((r) => (
+              <div key={r.dmdId} className="rounded-md border bg-background">
+                <MedicalTable
+                  headers={['Sample ID', '採檢日期', 'Result', 'CK']}
+                  rows={[
+                    [
+                      <span key="sampleId" className="font-mono-medical">
+                        {r.sampleId}
+                      </span>,
+                      r.collectDate,
+                      <Badge
+                        key="result"
+                        variant={
+                          r.result === 'Abnormal' ? 'destructive' : 'secondary'
+                        }
+                        className="h-4 text-[10px]"
+                      >
+                        {r.result}
+                      </Badge>,
+                      <MonoVal key="ck" val={r.ck} />,
+                    ],
+                  ]}
+                />
+                {r.tsh && r.tsh.length > 0 && (
+                  <div className="border-t bg-muted/20 px-3 py-2">
+                    <div className="mb-1 text-[10px] font-medium text-muted-foreground">
+                      tsh 加驗
+                    </div>
+                    <MedicalTable
+                      headers={['Sub Sample ID', '採檢日期', 'TSH', 'Result']}
+                      rows={r.tsh.map((t) => [
+                        <span key="sampleId" className="font-mono-medical">
+                          {t.sampleId}
+                        </span>,
+                        t.collectDate,
+                        <MonoVal key="tsh" val={t.tsh} />,
+                        <Badge
+                          key="result"
+                          variant={
+                            t.result === 'Abnormal'
+                              ? 'destructive'
+                              : 'secondary'
+                          }
+                          className="h-4 text-[10px]"
+                        >
+                          {t.result}
+                        </Badge>,
+                      ])}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </ModuleSection>
+      )}
+
+      {/* G6PD */}
+      {show('g6pd') && patient.g6pd.length > 0 && (
+        <ModuleSection
+          id="g6pd"
+          title="G6PD deficiency"
+          count={patient.g6pd.length}
+        >
+          <MedicalTable
+            headers={['Sample ID', '採檢日期', 'Result', 'G6PD 活性']}
+            rows={patient.g6pd.map((r) => [
+              <span key="sampleId" className="font-mono-medical">
+                {r.sampleId}
+              </span>,
+              r.collectDate,
+              <Badge
+                key="result"
+                variant={r.result === 'Abnormal' ? 'destructive' : 'secondary'}
+                className="h-4 text-[10px]"
+              >
+                {r.result}
+              </Badge>,
+              <MonoVal key="g6pdActivity" val={r.g6pdActivity} />,
+            ])}
+          />
+        </ModuleSection>
+      )}
+
+      {/* SMA / SCID */}
+      {show('smaScid') && patient.smaScid.length > 0 && (
+        <ModuleSection
+          id="smaScid"
+          title="SMA / SCID"
+          count={patient.smaScid.length}
+        >
+          <MedicalTable
+            headers={['Sample ID', '採檢日期', 'Result', 'SMN1 Copies', 'TREC']}
+            rows={patient.smaScid.map((r) => [
+              <span key="sampleId" className="font-mono-medical">
+                {r.sampleId}
+              </span>,
+              r.collectDate,
+              <Badge
+                key="result"
+                variant={r.result === 'Abnormal' ? 'destructive' : 'secondary'}
+                className="h-4 text-[10px]"
+              >
+                {r.result}
+              </Badge>,
+              <MonoVal key="smn1Copies" val={r.smn1Copies} />,
+              <MonoVal key="trec" val={r.trec} />,
+            ])}
+          />
+        </ModuleSection>
+      )}
+
       {/* Outbank */}
       {show('outbank') && patient.outbank.length > 0 && (
         <ModuleSection
@@ -572,6 +801,11 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
             gag: patient.gag.length,
             dnabank: patient.dnabank.length,
             outbank: patient.outbank.length,
+            bd: patient.bd.length,
+            cah: patient.cah.length,
+            dmd: patient.dmd.length,
+            g6pd: patient.g6pd.length,
+            smaScid: patient.smaScid.length,
           };
           const emptyModules = activeModules.filter(
             (id) => id !== 'basic' && moduleDataMap[id] === 0,

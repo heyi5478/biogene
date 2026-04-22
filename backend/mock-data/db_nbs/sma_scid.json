@@ -1,0 +1,26 @@
+[
+  {
+    "patientId": "49ba8dc6-8bca-5559-9cd4-beb9e3a14a57",
+    "sampleId": "NBS-SS-0001",
+    "collectDate": "2025-01-08",
+    "result": "Normal",
+    "smn1Copies": 2,
+    "trec": 85.0
+  },
+  {
+    "patientId": "c42f6fdc-c4c6-5ef3-9f1e-f64b6fc04d4e",
+    "sampleId": "NBS-SS-0002",
+    "collectDate": "2025-02-21",
+    "result": "Abnormal",
+    "smn1Copies": 0,
+    "trec": 72.0
+  },
+  {
+    "patientId": "95891bef-04d6-565c-9117-ce75b607f716",
+    "sampleId": "NBS-SS-0005",
+    "collectDate": "2025-04-05",
+    "result": "Abnormal",
+    "smn1Copies": 2,
+    "trec": 8.5
+  }
+]

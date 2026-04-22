@@ -1,0 +1,29 @@
+[
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "sampleName": "LSD-2025-0078",
+    "GAA": 5.2,
+    "GLA": 0.8,
+    "ABG": 8.5,
+    "IDUA": 12.3,
+    "ABG_GAA": 1.63
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "sampleName": "LSD-2025-0120",
+    "GAA": 6.8,
+    "GLA": 4.2,
+    "ABG": 9.1,
+    "IDUA": 11.8,
+    "ABG_GAA": 1.34
+  },
+  {
+    "patientId": "da34c89c-0452-5fbb-8c95-7c31976eb42e",
+    "sampleName": "LSD-2025-0155",
+    "GAA": 8.2,
+    "GLA": 5.5,
+    "ABG": 0.3,
+    "IDUA": 14.2,
+    "ABG_GAA": 0.04
+  }
+]

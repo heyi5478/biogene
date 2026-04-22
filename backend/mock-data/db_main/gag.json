@@ -1,0 +1,29 @@
+[
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "sampleName": "GAG-2025-0056",
+    "specimenType": "Urine",
+    "technician": "林美玲",
+    "result": "Elevated",
+    "DMGGAG": 185.2,
+    "CREATININE": 42.5
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "sampleName": "GAG-2025-0098",
+    "specimenType": "Urine",
+    "technician": "林美玲",
+    "result": "Elevated",
+    "DMGGAG": 425.8,
+    "CREATININE": 38.2
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "sampleName": "GAG-2025-0072",
+    "specimenType": "Urine",
+    "technician": "林美玲",
+    "result": "Elevated",
+    "DMGGAG": 398.5,
+    "CREATININE": 40.1
+  }
+]

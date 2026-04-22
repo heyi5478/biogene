@@ -1,0 +1,21 @@
+[
+  {
+    "patientId": "8aa80c48-51f7-5104-a122-c3d3d5ac50e0",
+    "sampleName": "EXT-MS-0023",
+    "specimenType": "DBS",
+    "result": "Abnormal",
+    "Ala": 290,
+    "Arg": 13.2,
+    "Cit": 19.0,
+    "Gly": 315,
+    "Leu": 148,
+    "Met": 23,
+    "Phe": 52,
+    "Tyr": 64,
+    "Val": 160,
+    "C0": 34,
+    "C2": 19,
+    "C3": 2.2,
+    "C5": 0.2
+  }
+]

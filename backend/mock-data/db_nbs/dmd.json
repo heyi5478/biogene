@@ -1,0 +1,18 @@
+[
+  {
+    "patientId": "c42f6fdc-c4c6-5ef3-9f1e-f64b6fc04d4e",
+    "dmdId": "NBS-DMD-0002",
+    "sampleId": "NBS-DMD-S-0002",
+    "collectDate": "2025-02-21",
+    "result": "Abnormal",
+    "ck": 1250.0
+  },
+  {
+    "patientId": "95891bef-04d6-565c-9117-ce75b607f716",
+    "dmdId": "NBS-DMD-0005",
+    "sampleId": "NBS-DMD-S-0005",
+    "collectDate": "2025-04-05",
+    "result": "Normal",
+    "ck": 180.0
+  }
+]

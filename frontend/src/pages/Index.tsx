@@ -35,6 +35,7 @@ const tabModuleMap: Record<string, ModuleId[]> = {
     'gag',
   ],
   specimen: ['dnabank', 'outbank'],
+  nbs: ['bd', 'cah', 'dmd', 'g6pd', 'smaScid'],
 };
 
 const Index = () => {
@@ -63,11 +64,15 @@ const Index = () => {
   }, [searchQuery]);
 
   const results = submittedQuery
-    ? mockPatients.filter(
-        (p) =>
+    ? mockPatients.filter((p) => {
+        const q = submittedQuery.toLowerCase();
+        return (
           p.name.includes(submittedQuery) ||
-          p.chartno.toLowerCase().includes(submittedQuery.toLowerCase()),
-      )
+          (p.chartno?.toLowerCase().includes(q) ?? false) ||
+          (p.externalChartno?.toLowerCase().includes(q) ?? false) ||
+          (p.nbsId?.toLowerCase().includes(q) ?? false)
+        );
+      })
     : [];
 
   const displayPatient =
@@ -231,6 +236,9 @@ const Index = () => {
                       <TabsTrigger value="specimen" className="h-7 text-xs">
                         檢體
                       </TabsTrigger>
+                      <TabsTrigger value="nbs" className="h-7 text-xs">
+                        新生兒篩檢
+                      </TabsTrigger>
                     </TabsList>
                     <TabsContent value={activeTab} className="mt-3">
                       <ResultModules
@@ -302,6 +310,9 @@ const Index = () => {
                       </TabsTrigger>
                       <TabsTrigger value="specimen" className="h-7 text-xs">
                         檢體
+                      </TabsTrigger>
+                      <TabsTrigger value="nbs" className="h-7 text-xs">
+                        新生兒篩檢
                       </TabsTrigger>
                     </TabsList>
                     <TabsContent value={activeTab} className="mt-3">

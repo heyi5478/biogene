@@ -1,570 +1,277 @@
-import { Patient } from '@/types/medical';
+import {
+  AaSample,
+  AadcSample,
+  AldSample,
+  BdSample,
+  BiomarkerSample,
+  CahSample,
+  DmdSample,
+  DnabankRecord,
+  EnzymeSample,
+  G6pdSample,
+  GagSample,
+  LsdSample,
+  MmaSample,
+  Mps2Sample,
+  MsmsSample,
+  OpdRecord,
+  OutbankRecord,
+  Patient,
+  PatientSource,
+  SmaScidSample,
+  TgalSubSample,
+  TshSubSample,
+} from '@/types/medical';
+
+// --- db_main JSON ---
+import mainPatient from '../../../backend/mock-data/db_main/patient.json';
+import mainOpd from '../../../backend/mock-data/db_main/opd.json';
+import mainAa from '../../../backend/mock-data/db_main/aa.json';
+import mainMsms from '../../../backend/mock-data/db_main/msms.json';
+import mainBiomarker from '../../../backend/mock-data/db_main/biomarker.json';
+import mainAadc from '../../../backend/mock-data/db_main/aadc.json';
+import mainAld from '../../../backend/mock-data/db_main/ald.json';
+import mainMma from '../../../backend/mock-data/db_main/mma.json';
+import mainMps2 from '../../../backend/mock-data/db_main/mps2.json';
+import mainLsd from '../../../backend/mock-data/db_main/lsd.json';
+import mainEnzyme from '../../../backend/mock-data/db_main/enzyme.json';
+import mainGag from '../../../backend/mock-data/db_main/gag.json';
+import mainDnabank from '../../../backend/mock-data/db_main/dnabank.json';
+import mainOutbank from '../../../backend/mock-data/db_main/outbank.json';
+
+// --- db_external JSON ---
+import extPatient from '../../../backend/mock-data/db_external/patient.json';
+import extOpd from '../../../backend/mock-data/db_external/opd.json';
+import extAa from '../../../backend/mock-data/db_external/aa.json';
+import extMsms from '../../../backend/mock-data/db_external/msms.json';
+import extBiomarker from '../../../backend/mock-data/db_external/biomarker.json';
+import extLsd from '../../../backend/mock-data/db_external/lsd.json';
+import extEnzyme from '../../../backend/mock-data/db_external/enzyme.json';
+import extGag from '../../../backend/mock-data/db_external/gag.json';
+import extOutbank from '../../../backend/mock-data/db_external/outbank.json';
+
+// --- db_nbs JSON ---
+import nbsPatient from '../../../backend/mock-data/db_nbs/patient.json';
+import nbsOpd from '../../../backend/mock-data/db_nbs/opd.json';
+import nbsBd from '../../../backend/mock-data/db_nbs/bd.json';
+import nbsCah from '../../../backend/mock-data/db_nbs/cah.json';
+import nbsCahTgal from '../../../backend/mock-data/db_nbs/cah_tgal.json';
+import nbsDmd from '../../../backend/mock-data/db_nbs/dmd.json';
+import nbsDmdTsh from '../../../backend/mock-data/db_nbs/dmd_tsh.json';
+import nbsG6pd from '../../../backend/mock-data/db_nbs/g6pd.json';
+import nbsSmaScid from '../../../backend/mock-data/db_nbs/sma_scid.json';
+import nbsAa from '../../../backend/mock-data/db_nbs/aa.json';
+import nbsMsms from '../../../backend/mock-data/db_nbs/msms.json';
+import nbsBiomarker from '../../../backend/mock-data/db_nbs/biomarker.json';
+import nbsOutbank from '../../../backend/mock-data/db_nbs/outbank.json';
+
+type WithPatientId<T> = T & { patientId: string };
+
+function groupByPatient<T extends { patientId: string }>(
+  rows: T[],
+): Map<string, T[]> {
+  const map = new Map<string, T[]>();
+  rows.forEach((row) => {
+    const list = map.get(row.patientId);
+    if (list) list.push(row);
+    else map.set(row.patientId, [row]);
+  });
+  return map;
+}
+
+function pick<T extends { patientId: string }, K extends keyof T>(
+  rows: T[],
+  exclude: K,
+): Omit<T, K>[] {
+  return rows.map(({ [exclude]: _drop, ...rest }) => rest) as Omit<T, K>[];
+}
+
+interface PatientRow {
+  patientId: string;
+  source: PatientSource;
+  chartno?: string;
+  externalChartno?: string;
+  nbsId?: string;
+  category?: string;
+  linkedPatientIds?: string[];
+  name: string;
+  birthday: string;
+  sex: '男' | '女';
+  diagnosis?: string;
+  diagnosis2?: string;
+  diagnosis3?: string;
+}
+
+function buildPatient(
+  p: PatientRow,
+  groups: {
+    opd: Map<string, WithPatientId<OpdRecord>[]>;
+    aa: Map<string, WithPatientId<AaSample>[]>;
+    msms: Map<string, WithPatientId<MsmsSample>[]>;
+    biomarker: Map<string, WithPatientId<BiomarkerSample>[]>;
+    aadc: Map<string, WithPatientId<AadcSample>[]>;
+    ald: Map<string, WithPatientId<AldSample>[]>;
+    mma: Map<string, WithPatientId<MmaSample>[]>;
+    mps2: Map<string, WithPatientId<Mps2Sample>[]>;
+    lsd: Map<string, WithPatientId<LsdSample>[]>;
+    enzyme: Map<string, WithPatientId<EnzymeSample>[]>;
+    gag: Map<string, WithPatientId<GagSample>[]>;
+    dnabank: Map<string, WithPatientId<DnabankRecord>[]>;
+    outbank: Map<string, WithPatientId<OutbankRecord>[]>;
+    bd: Map<string, WithPatientId<BdSample>[]>;
+    cah: Map<string, WithPatientId<CahSample>[]>;
+    dmd: Map<string, WithPatientId<DmdSample>[]>;
+    g6pd: Map<string, WithPatientId<G6pdSample>[]>;
+    smaScid: Map<string, WithPatientId<SmaScidSample>[]>;
+  },
+): Patient {
+  const id = p.patientId;
+  return {
+    ...p,
+    opd: pick(groups.opd.get(id) ?? [], 'patientId'),
+    aa: pick(groups.aa.get(id) ?? [], 'patientId'),
+    msms: pick(groups.msms.get(id) ?? [], 'patientId'),
+    biomarker: pick(groups.biomarker.get(id) ?? [], 'patientId'),
+    aadc: pick(groups.aadc.get(id) ?? [], 'patientId'),
+    ald: pick(groups.ald.get(id) ?? [], 'patientId'),
+    mma: pick(groups.mma.get(id) ?? [], 'patientId'),
+    mps2: pick(groups.mps2.get(id) ?? [], 'patientId'),
+    lsd: pick(groups.lsd.get(id) ?? [], 'patientId'),
+    enzyme: pick(groups.enzyme.get(id) ?? [], 'patientId'),
+    gag: pick(groups.gag.get(id) ?? [], 'patientId'),
+    dnabank: pick(groups.dnabank.get(id) ?? [], 'patientId'),
+    outbank: pick(groups.outbank.get(id) ?? [], 'patientId'),
+    bd: pick(groups.bd.get(id) ?? [], 'patientId'),
+    cah: pick(groups.cah.get(id) ?? [], 'patientId'),
+    dmd: pick(groups.dmd.get(id) ?? [], 'patientId'),
+    g6pd: pick(groups.g6pd.get(id) ?? [], 'patientId'),
+    smaScid: pick(groups.smaScid.get(id) ?? [], 'patientId'),
+  };
+}
+
+// Empty maps for tables that don't exist in a given database (e.g. db_main has
+// no bd/cah/..., db_external has no aadc/ald/..., etc.). buildPatient calls
+// .get() against them, so we just need an empty Map.
+const EMPTY = <T>() => new Map<string, WithPatientId<T>[]>();
+
+// --- Attach tgal sub-rows to their parent cah rows by cahId ---
+function joinCahTgal(
+  cahRows: WithPatientId<CahSample>[],
+  tgalRows: (TgalSubSample & { cahId: string })[],
+): WithPatientId<CahSample>[] {
+  const tgalByCah = new Map<string, TgalSubSample[]>();
+  tgalRows.forEach((row) => {
+    const { cahId, ...rest } = row;
+    const list = tgalByCah.get(cahId);
+    if (list) list.push(rest);
+    else tgalByCah.set(cahId, [rest]);
+  });
+  return cahRows.map((cah) => ({
+    ...cah,
+    tgal: tgalByCah.get(cah.cahId) ?? [],
+  }));
+}
+
+// --- Attach tsh sub-rows to their parent dmd rows by dmdId ---
+function joinDmdTsh(
+  dmdRows: WithPatientId<DmdSample>[],
+  tshRows: (TshSubSample & { dmdId: string })[],
+): WithPatientId<DmdSample>[] {
+  const tshByDmd = new Map<string, TshSubSample[]>();
+  tshRows.forEach((row) => {
+    const { dmdId, ...rest } = row;
+    const list = tshByDmd.get(dmdId);
+    if (list) list.push(rest);
+    else tshByDmd.set(dmdId, [rest]);
+  });
+  return dmdRows.map((dmd) => ({
+    ...dmd,
+    tsh: tshByDmd.get(dmd.dmdId) ?? [],
+  }));
+}
+
+const nbsCahJoined = joinCahTgal(
+  nbsCah as WithPatientId<CahSample>[],
+  nbsCahTgal as (TgalSubSample & { cahId: string })[],
+);
+const nbsDmdJoined = joinDmdTsh(
+  nbsDmd as WithPatientId<DmdSample>[],
+  nbsDmdTsh as (TshSubSample & { dmdId: string })[],
+);
+
+const mainPatients: Patient[] = (mainPatient as PatientRow[]).map((p) =>
+  buildPatient(p, {
+    opd: groupByPatient(mainOpd as WithPatientId<OpdRecord>[]),
+    aa: groupByPatient(mainAa as WithPatientId<AaSample>[]),
+    msms: groupByPatient(mainMsms as WithPatientId<MsmsSample>[]),
+    biomarker: groupByPatient(
+      mainBiomarker as WithPatientId<BiomarkerSample>[],
+    ),
+    aadc: groupByPatient(mainAadc as WithPatientId<AadcSample>[]),
+    ald: groupByPatient(mainAld as WithPatientId<AldSample>[]),
+    mma: groupByPatient(mainMma as WithPatientId<MmaSample>[]),
+    mps2: groupByPatient(mainMps2 as WithPatientId<Mps2Sample>[]),
+    lsd: groupByPatient(mainLsd as WithPatientId<LsdSample>[]),
+    enzyme: groupByPatient(mainEnzyme as WithPatientId<EnzymeSample>[]),
+    gag: groupByPatient(mainGag as WithPatientId<GagSample>[]),
+    dnabank: groupByPatient(mainDnabank as WithPatientId<DnabankRecord>[]),
+    outbank: groupByPatient(mainOutbank as WithPatientId<OutbankRecord>[]),
+    bd: EMPTY<BdSample>(),
+    cah: EMPTY<CahSample>(),
+    dmd: EMPTY<DmdSample>(),
+    g6pd: EMPTY<G6pdSample>(),
+    smaScid: EMPTY<SmaScidSample>(),
+  }),
+);
+
+const externalPatients: Patient[] = (extPatient as PatientRow[]).map((p) =>
+  buildPatient(p, {
+    opd: groupByPatient(extOpd as WithPatientId<OpdRecord>[]),
+    aa: groupByPatient(extAa as WithPatientId<AaSample>[]),
+    msms: groupByPatient(extMsms as WithPatientId<MsmsSample>[]),
+    biomarker: groupByPatient(extBiomarker as WithPatientId<BiomarkerSample>[]),
+    aadc: EMPTY<AadcSample>(),
+    ald: EMPTY<AldSample>(),
+    mma: EMPTY<MmaSample>(),
+    mps2: EMPTY<Mps2Sample>(),
+    lsd: groupByPatient(extLsd as WithPatientId<LsdSample>[]),
+    enzyme: groupByPatient(extEnzyme as WithPatientId<EnzymeSample>[]),
+    gag: groupByPatient(extGag as WithPatientId<GagSample>[]),
+    dnabank: EMPTY<DnabankRecord>(),
+    outbank: groupByPatient(extOutbank as WithPatientId<OutbankRecord>[]),
+    bd: EMPTY<BdSample>(),
+    cah: EMPTY<CahSample>(),
+    dmd: EMPTY<DmdSample>(),
+    g6pd: EMPTY<G6pdSample>(),
+    smaScid: EMPTY<SmaScidSample>(),
+  }),
+);
+
+const nbsPatients: Patient[] = (nbsPatient as PatientRow[]).map((p) =>
+  buildPatient(p, {
+    opd: groupByPatient(nbsOpd as WithPatientId<OpdRecord>[]),
+    aa: groupByPatient(nbsAa as WithPatientId<AaSample>[]),
+    msms: groupByPatient(nbsMsms as WithPatientId<MsmsSample>[]),
+    biomarker: groupByPatient(nbsBiomarker as WithPatientId<BiomarkerSample>[]),
+    aadc: EMPTY<AadcSample>(),
+    ald: EMPTY<AldSample>(),
+    mma: EMPTY<MmaSample>(),
+    mps2: EMPTY<Mps2Sample>(),
+    lsd: EMPTY<LsdSample>(),
+    enzyme: EMPTY<EnzymeSample>(),
+    gag: EMPTY<GagSample>(),
+    dnabank: EMPTY<DnabankRecord>(),
+    outbank: groupByPatient(nbsOutbank as WithPatientId<OutbankRecord>[]),
+    bd: groupByPatient(nbsBd as WithPatientId<BdSample>[]),
+    cah: groupByPatient(nbsCahJoined),
+    dmd: groupByPatient(nbsDmdJoined),
+    g6pd: groupByPatient(nbsG6pd as WithPatientId<G6pdSample>[]),
+    smaScid: groupByPatient(nbsSmaScid as WithPatientId<SmaScidSample>[]),
+  }),
+);
 
 export const mockPatients: Patient[] = [
-  {
-    chartno: 'A1234567',
-    name: '陳志明',
-    birthday: '1985-03-15',
-    sex: '男',
-    diagnosis: 'Fabry disease (E75.21)',
-    diagnosis2: 'Chronic kidney disease, stage 3 (N18.3)',
-    diagnosis3: 'Left ventricular hypertrophy (I51.7)',
-    opd: [
-      {
-        visitDate: '2025-12-10',
-        sex: '男',
-        birthday: '1985-03-15',
-        diagCode: 'E75.21',
-        diagName: 'Fabry disease',
-        subDiag1: 'Chronic kidney disease, stage 3',
-      },
-      {
-        visitDate: '2025-09-05',
-        sex: '男',
-        birthday: '1985-03-15',
-        diagCode: 'E75.21',
-        diagName: 'Fabry disease',
-        subDiag1: 'Left ventricular hypertrophy',
-      },
-      {
-        visitDate: '2025-06-12',
-        sex: '男',
-        birthday: '1985-03-15',
-        diagCode: 'E75.21',
-        diagName: 'Fabry disease',
-        subDiag1: 'Proteinuria',
-      },
-    ],
-    aa: [
-      {
-        sampleName: 'AA-2025-0412',
-        specimenType: 'Plasma',
-        result: 'Normal',
-        Gln: 520,
-        Citr: 28,
-        Ala: 310,
-        Arg: 85,
-        Leu: 120,
-        Val: 195,
-        Phe: 52,
-        Tyr: 58,
-      },
-    ],
-    msms: [
-      {
-        sampleName: 'MS-2025-0388',
-        specimenType: 'DBS',
-        result: 'Normal',
-        Ala: 280,
-        Arg: 12.5,
-        Cit: 18.3,
-        Gly: 310,
-        Leu: 145,
-        Met: 22,
-        Phe: 48,
-        Tyr: 62,
-        Val: 155,
-        C0: 32,
-        C2: 18,
-        C3: 2.1,
-        C5: 0.18,
-      },
-    ],
-    biomarker: [
-      {
-        sampleName: 'BM-2025-0156',
-        dbsLysoGb3: 12.8,
-        dbsLysoGL1: 5.2,
-        dbsLysoSM: 28.4,
-        plasmaLysoGb3: 18.6,
-        plasmaLysoGL1: 7.8,
-        plasmaLysoSM: 32.1,
-      },
-    ],
-    aadc: [{ sampleName: 'AADC-2025-0089', conc: 42.5, date: '2025-10-15' }],
-    ald: [{ sampleName: 'ALD-2025-0034', conc: 0.85, date: '2025-10-15' }],
-    mma: [{ sampleName: 'MMA-2025-0067', conc: 0.32, date: '2025-10-15' }],
-    mps2: [
-      {
-        sampleName: 'MPS-2025-0045',
-        MPS2: 8.5,
-        TPP1: 12.3,
-        MPS4A: 15.8,
-        MPS6: 22.1,
-      },
-    ],
-    lsd: [
-      {
-        sampleName: 'LSD-2025-0078',
-        GAA: 5.2,
-        GLA: 0.8,
-        ABG: 8.5,
-        IDUA: 12.3,
-        ABG_GAA: 1.63,
-      },
-    ],
-    enzyme: [
-      {
-        sampleName: 'ENZ-2025-0112',
-        specimenType: 'Leukocyte',
-        technician: '王小芳',
-        result: 'Deficient',
-        MPS1: 2.1,
-        enzymeMPS2: 45.8,
-      },
-    ],
-    gag: [
-      {
-        sampleName: 'GAG-2025-0056',
-        specimenType: 'Urine',
-        technician: '林美玲',
-        result: 'Elevated',
-        DMGGAG: 185.2,
-        CREATININE: 42.5,
-      },
-    ],
-    dnabank: [
-      {
-        orderno: 'DNA-2025-001',
-        order: 'GLA gene sequencing',
-        orderMemo: 'Fabry suspected',
-        keyword: 'Fabry;GLA',
-        specimenno: 'D-2025-0128',
-        specimen: 'Whole blood',
-      },
-    ],
-    outbank: [
-      {
-        sampleno: 'OUT-2025-0034',
-        shipdate: '2025-11-02',
-        assay: 'GLA gene full sequencing',
-        result: 'c.644A>G (p.N215S) heterozygous',
-      },
-    ],
-  },
-  {
-    chartno: 'B2345678',
-    name: '林雅婷',
-    birthday: '2018-07-22',
-    sex: '女',
-    diagnosis: 'Phenylketonuria (E70.0)',
-    diagnosis2: 'Developmental delay (F88)',
-    opd: [
-      {
-        visitDate: '2025-11-28',
-        sex: '女',
-        birthday: '2018-07-22',
-        diagCode: 'E70.0',
-        diagName: 'Phenylketonuria',
-        subDiag1: 'Developmental delay',
-      },
-      {
-        visitDate: '2025-08-15',
-        sex: '女',
-        birthday: '2018-07-22',
-        diagCode: 'E70.0',
-        diagName: 'Phenylketonuria',
-        subDiag1: 'Growth retardation',
-      },
-    ],
-    aa: [
-      {
-        sampleName: 'AA-2025-0520',
-        specimenType: 'Plasma',
-        result: 'Abnormal',
-        Gln: 480,
-        Citr: 32,
-        Ala: 295,
-        Arg: 78,
-        Leu: 115,
-        Val: 188,
-        Phe: 890,
-        Tyr: 42,
-      },
-      {
-        sampleName: 'AA-2025-0318',
-        specimenType: 'Plasma',
-        result: 'Abnormal',
-        Gln: 510,
-        Citr: 30,
-        Ala: 305,
-        Arg: 82,
-        Leu: 122,
-        Val: 192,
-        Phe: 1120,
-        Tyr: 38,
-      },
-    ],
-    msms: [
-      {
-        sampleName: 'MS-2025-0492',
-        specimenType: 'DBS',
-        result: 'Abnormal',
-        Ala: 265,
-        Arg: 11.8,
-        Cit: 16.5,
-        Gly: 298,
-        Leu: 138,
-        Met: 20,
-        Phe: 385,
-        Tyr: 35,
-        Val: 148,
-        C0: 28,
-        C2: 16,
-        C3: 1.8,
-        C5: 0.15,
-      },
-    ],
-    biomarker: [],
-    aadc: [],
-    ald: [],
-    mma: [{ sampleName: 'MMA-2025-0095', conc: 0.28, date: '2025-09-20' }],
-    mps2: [],
-    lsd: [],
-    enzyme: [],
-    gag: [],
-    dnabank: [
-      {
-        orderno: 'DNA-2025-008',
-        order: 'PAH gene sequencing',
-        orderMemo: 'PKU confirmed',
-        keyword: 'PKU;PAH',
-        specimenno: 'D-2025-0256',
-        specimen: 'Whole blood',
-      },
-    ],
-    outbank: [
-      {
-        sampleno: 'OUT-2025-0089',
-        shipdate: '2025-10-05',
-        assay: 'PAH gene panel',
-        result: 'c.728G>A (p.R243Q) compound heterozygous',
-      },
-    ],
-  },
-  {
-    chartno: 'C3456789',
-    name: '張偉翔',
-    birthday: '2020-01-08',
-    sex: '男',
-    diagnosis: 'Mucopolysaccharidosis type II (E76.1)',
-    diagnosis2: 'Hepatosplenomegaly (R16.2)',
-    diagnosis3: 'Hearing loss (H91.9)',
-    opd: [
-      {
-        visitDate: '2025-12-01',
-        sex: '男',
-        birthday: '2020-01-08',
-        diagCode: 'E76.1',
-        diagName: 'Mucopolysaccharidosis type II',
-        subDiag1: 'Hepatosplenomegaly',
-        subDiag2: 'Hearing loss',
-      },
-      {
-        visitDate: '2025-09-18',
-        sex: '男',
-        birthday: '2020-01-08',
-        diagCode: 'E76.1',
-        diagName: 'Mucopolysaccharidosis type II',
-        subDiag1: 'Hepatosplenomegaly',
-      },
-      {
-        visitDate: '2025-06-20',
-        sex: '男',
-        birthday: '2020-01-08',
-        diagCode: 'E76.1',
-        diagName: 'Mucopolysaccharidosis type II',
-        subDiag1: 'Growth retardation',
-      },
-      {
-        visitDate: '2025-03-10',
-        sex: '男',
-        birthday: '2020-01-08',
-        diagCode: 'E76.1',
-        diagName: 'Mucopolysaccharidosis type II',
-        subDiag1: 'Hepatosplenomegaly',
-      },
-    ],
-    aa: [],
-    msms: [
-      {
-        sampleName: 'MS-2025-0510',
-        specimenType: 'DBS',
-        result: 'Normal',
-        Ala: 272,
-        Arg: 13.0,
-        Cit: 17.8,
-        Gly: 305,
-        Leu: 142,
-        Met: 21,
-        Phe: 50,
-        Tyr: 60,
-        Val: 152,
-        C0: 30,
-        C2: 17,
-        C3: 2.0,
-        C5: 0.16,
-      },
-    ],
-    biomarker: [
-      {
-        sampleName: 'BM-2025-0210',
-        dbsLysoGb3: 3.2,
-        dbsLysoGL1: 2.1,
-        dbsLysoSM: 8.5,
-      },
-    ],
-    aadc: [],
-    ald: [],
-    mma: [],
-    mps2: [
-      {
-        sampleName: 'MPS-2025-0088',
-        MPS2: 1.2,
-        TPP1: 14.5,
-        MPS4A: 18.2,
-        MPS6: 25.6,
-      },
-    ],
-    lsd: [
-      {
-        sampleName: 'LSD-2025-0120',
-        GAA: 6.8,
-        GLA: 4.2,
-        ABG: 9.1,
-        IDUA: 11.8,
-        ABG_GAA: 1.34,
-      },
-    ],
-    enzyme: [
-      {
-        sampleName: 'ENZ-2025-0178',
-        specimenType: 'Leukocyte',
-        technician: '陳建宏',
-        result: 'Deficient',
-        MPS1: 15.2,
-        enzymeMPS2: 0.8,
-      },
-      {
-        sampleName: 'ENZ-2025-0145',
-        specimenType: 'Plasma',
-        technician: '王小芳',
-        result: 'Deficient',
-        MPS1: 18.5,
-        enzymeMPS2: 1.2,
-      },
-    ],
-    gag: [
-      {
-        sampleName: 'GAG-2025-0098',
-        specimenType: 'Urine',
-        technician: '林美玲',
-        result: 'Elevated',
-        DMGGAG: 425.8,
-        CREATININE: 38.2,
-      },
-      {
-        sampleName: 'GAG-2025-0072',
-        specimenType: 'Urine',
-        technician: '林美玲',
-        result: 'Elevated',
-        DMGGAG: 398.5,
-        CREATININE: 40.1,
-      },
-    ],
-    dnabank: [
-      {
-        orderno: 'DNA-2025-015',
-        order: 'IDS gene sequencing',
-        orderMemo: 'MPS II confirmed',
-        keyword: 'MPS2;IDS;Hunter',
-        specimenno: 'D-2025-0388',
-        specimen: 'Whole blood',
-      },
-      {
-        orderno: 'DNA-2025-016',
-        order: 'IDS gene deletion analysis',
-        orderMemo: '',
-        keyword: 'MPS2;IDS',
-        specimenno: 'D-2025-0389',
-        specimen: 'Fibroblast',
-      },
-    ],
-    outbank: [
-      {
-        sampleno: 'OUT-2025-0112',
-        shipdate: '2025-08-15',
-        assay: 'IDS gene full analysis',
-        result: 'c.1402C>T (p.R468W) hemizygous',
-      },
-      {
-        sampleno: 'OUT-2025-0145',
-        shipdate: '2025-11-20',
-        assay: 'MPS panel NGS',
-        result: 'Pending',
-      },
-    ],
-  },
-  {
-    chartno: 'D4567890',
-    name: '黃淑芬',
-    birthday: '1992-11-03',
-    sex: '女',
-    diagnosis: 'Gaucher disease type 1 (E75.22)',
-    opd: [
-      {
-        visitDate: '2025-10-22',
-        sex: '女',
-        birthday: '1992-11-03',
-        diagCode: 'E75.22',
-        diagName: 'Gaucher disease type 1',
-        subDiag1: 'Thrombocytopenia',
-      },
-    ],
-    aa: [],
-    msms: [],
-    biomarker: [
-      {
-        sampleName: 'BM-2025-0285',
-        dbsLysoGb3: 2.8,
-        dbsLysoGL1: 45.2,
-        dbsLysoSM: 12.5,
-        plasmaLysoGb3: 3.5,
-        plasmaLysoGL1: 68.8,
-      },
-    ],
-    aadc: [],
-    ald: [],
-    mma: [],
-    mps2: [],
-    lsd: [
-      {
-        sampleName: 'LSD-2025-0155',
-        GAA: 8.2,
-        GLA: 5.5,
-        ABG: 0.3,
-        IDUA: 14.2,
-        ABG_GAA: 0.04,
-      },
-    ],
-    enzyme: [
-      {
-        sampleName: 'ENZ-2025-0201',
-        specimenType: 'Leukocyte',
-        technician: '陳建宏',
-        result: 'Deficient',
-        MPS1: 22.5,
-        enzymeMPS2: 48.2,
-      },
-    ],
-    gag: [],
-    dnabank: [
-      {
-        orderno: 'DNA-2025-022',
-        order: 'GBA gene sequencing',
-        orderMemo: 'Gaucher suspected',
-        keyword: 'Gaucher;GBA',
-        specimenno: 'D-2025-0456',
-        specimen: 'Whole blood',
-      },
-    ],
-    outbank: [
-      {
-        sampleno: 'OUT-2025-0178',
-        shipdate: '2025-09-28',
-        assay: 'GBA gene sequencing',
-        result: 'c.1226A>G (p.N409S) homozygous',
-      },
-    ],
-  },
-  {
-    chartno: 'E5678901',
-    name: '王建國',
-    birthday: '2015-05-18',
-    sex: '男',
-    diagnosis: 'AADC deficiency (E70.8)',
-    diagnosis2: 'Dystonia (G24.9)',
-    opd: [
-      {
-        visitDate: '2025-11-15',
-        sex: '男',
-        birthday: '2015-05-18',
-        diagCode: 'E70.8',
-        diagName: 'AADC deficiency',
-        subDiag1: 'Dystonia',
-      },
-      {
-        visitDate: '2025-08-20',
-        sex: '男',
-        birthday: '2015-05-18',
-        diagCode: 'E70.8',
-        diagName: 'AADC deficiency',
-        subDiag1: 'Oculogyric crisis',
-      },
-    ],
-    aa: [
-      {
-        sampleName: 'AA-2025-0610',
-        specimenType: 'CSF',
-        result: 'Abnormal',
-        Gln: 380,
-        Citr: 22,
-        Ala: 245,
-        Arg: 65,
-        Leu: 98,
-        Val: 165,
-        Phe: 48,
-        Tyr: 35,
-      },
-    ],
-    msms: [
-      {
-        sampleName: 'MS-2025-0598',
-        specimenType: 'DBS',
-        result: 'Normal',
-        Ala: 258,
-        Arg: 10.5,
-        Cit: 15.8,
-        Gly: 288,
-        Leu: 132,
-        Met: 18,
-        Phe: 45,
-        Tyr: 55,
-        Val: 142,
-        C0: 26,
-        C2: 14,
-        C3: 1.6,
-        C5: 0.14,
-      },
-    ],
-    biomarker: [],
-    aadc: [
-      { sampleName: 'AADC-2025-0125', conc: 2.8, date: '2025-11-15' },
-      { sampleName: 'AADC-2025-0098', conc: 3.1, date: '2025-08-20' },
-    ],
-    ald: [],
-    mma: [],
-    mps2: [],
-    lsd: [],
-    enzyme: [],
-    gag: [],
-    dnabank: [
-      {
-        orderno: 'DNA-2025-028',
-        order: 'DDC gene sequencing',
-        orderMemo: 'AADC deficiency',
-        keyword: 'AADC;DDC',
-        specimenno: 'D-2025-0512',
-        specimen: 'Whole blood',
-      },
-    ],
-    outbank: [
-      {
-        sampleno: 'OUT-2025-0201',
-        shipdate: '2025-07-10',
-        assay: 'DDC gene analysis',
-        result: 'c.714+4A>T splice site mutation homozygous',
-      },
-    ],
-  },
+  ...mainPatients,
+  ...externalPatients,
+  ...nbsPatients,
 ];

@@ -1,0 +1,16 @@
+[
+  {
+    "cahId": "NBS-CAH-0003",
+    "sampleId": "NBS-TGAL-0003a",
+    "collectDate": "2025-03-20",
+    "totalGalactose": 8.5,
+    "result": "Normal"
+  },
+  {
+    "cahId": "NBS-CAH-0003",
+    "sampleId": "NBS-TGAL-0003b",
+    "collectDate": "2025-03-28",
+    "totalGalactose": 6.2,
+    "result": "Normal"
+  }
+]

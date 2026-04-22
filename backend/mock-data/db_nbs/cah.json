@@ -1,0 +1,18 @@
+[
+  {
+    "patientId": "49ba8dc6-8bca-5559-9cd4-beb9e3a14a57",
+    "cahId": "NBS-CAH-0001",
+    "sampleId": "NBS-CAH-S-0001",
+    "collectDate": "2025-01-08",
+    "result": "Normal",
+    "ohp17": 18.5
+  },
+  {
+    "patientId": "d0393571-65ca-5878-b622-41320c414af1",
+    "cahId": "NBS-CAH-0003",
+    "sampleId": "NBS-CAH-S-0003",
+    "collectDate": "2025-03-14",
+    "result": "Abnormal",
+    "ohp17": 92.0
+  }
+]

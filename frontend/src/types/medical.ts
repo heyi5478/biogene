@@ -12,7 +12,12 @@ export type ModuleId =
   | 'enzyme'
   | 'gag'
   | 'dnabank'
-  | 'outbank';
+  | 'outbank'
+  | 'bd'
+  | 'cah'
+  | 'dmd'
+  | 'g6pd'
+  | 'smaScid';
 
 export interface ModuleInfo {
   id: ModuleId;
@@ -20,15 +25,23 @@ export interface ModuleInfo {
   name: string;
   description: string;
   tooltip: string;
-  group: 'patient' | 'disease' | 'lab' | 'specimen';
+  group: 'patient' | 'disease' | 'lab' | 'specimen' | 'nbs';
 }
 
+export type PatientSource = 'main' | 'external' | 'nbs';
+
 export interface Patient {
-  chartno: string;
+  patientId: string;
+  source: PatientSource;
+  chartno?: string;
+  externalChartno?: string;
+  nbsId?: string;
+  category?: string;
+  linkedPatientIds?: string[];
   name: string;
   birthday: string;
   sex: '男' | '女';
-  diagnosis: string;
+  diagnosis?: string;
   diagnosis2?: string;
   diagnosis3?: string;
   opd: OpdRecord[];
@@ -44,6 +57,11 @@ export interface Patient {
   gag: GagSample[];
   dnabank: DnabankRecord[];
   outbank: OutbankRecord[];
+  bd: BdSample[];
+  cah: CahSample[];
+  dmd: DmdSample[];
+  g6pd: G6pdSample[];
+  smaScid: SmaScidSample[];
 }
 
 export interface OpdRecord {
@@ -168,6 +186,60 @@ export interface OutbankRecord {
   result: string;
 }
 
+export interface BdSample {
+  sampleId: string;
+  collectDate: string;
+  result: string;
+  biotinidaseActivity?: number;
+}
+
+export interface TgalSubSample {
+  sampleId: string;
+  collectDate: string;
+  totalGalactose?: number;
+  result: string;
+}
+
+export interface CahSample {
+  cahId: string;
+  sampleId: string;
+  collectDate: string;
+  result: string;
+  ohp17?: number;
+  tgal?: TgalSubSample[];
+}
+
+export interface TshSubSample {
+  sampleId: string;
+  collectDate: string;
+  tsh?: number;
+  result: string;
+}
+
+export interface DmdSample {
+  dmdId: string;
+  sampleId: string;
+  collectDate: string;
+  result: string;
+  ck?: number;
+  tsh?: TshSubSample[];
+}
+
+export interface G6pdSample {
+  sampleId: string;
+  collectDate: string;
+  result: string;
+  g6pdActivity?: number;
+}
+
+export interface SmaScidSample {
+  sampleId: string;
+  collectDate: string;
+  result: string;
+  smn1Copies?: number;
+  trec?: number;
+}
+
 export const MODULE_DEFINITIONS: ModuleInfo[] = [
   {
     id: 'basic',
@@ -280,6 +352,46 @@ export const MODULE_DEFINITIONS: ModuleInfo[] = [
     description: '查外送檢體編號、送驗日期、assay 與結果',
     tooltip: '顯示外送檢體、送驗日期、assay 與結果',
     group: 'specimen',
+  },
+  {
+    id: 'bd',
+    code: 'BD',
+    name: 'Biotinidase deficiency',
+    description: '新生兒篩檢 - biotinidase 活性',
+    tooltip: '顯示 BD（Biotinidase deficiency）篩檢結果',
+    group: 'nbs',
+  },
+  {
+    id: 'cah',
+    code: 'CAH',
+    name: 'Congenital adrenal hyperplasia',
+    description: '新生兒篩檢 - 17-OHP（含 tgal 加驗）',
+    tooltip: '顯示 CAH 篩檢結果，含 tgal 追加檢驗',
+    group: 'nbs',
+  },
+  {
+    id: 'dmd',
+    code: 'DMD',
+    name: 'Duchenne muscular dystrophy',
+    description: '新生兒篩檢 - CK（含 tsh 加驗）',
+    tooltip: '顯示 DMD 篩檢結果，含 tsh 追加檢驗',
+    group: 'nbs',
+  },
+  {
+    id: 'g6pd',
+    code: 'G6PD',
+    name: 'G6PD deficiency',
+    description: '新生兒篩檢 - G6PD 活性',
+    tooltip: '顯示 G6PD deficiency 篩檢結果',
+    group: 'nbs',
+  },
+  {
+    id: 'smaScid',
+    code: 'SMA/SCID',
+    name: 'SMA / SCID',
+    description: '新生兒篩檢 - SMN1 copies、TREC',
+    tooltip: '顯示 SMA / SCID 篩檢結果',
+    group: 'nbs',
   },
 ];
 
@@ -542,6 +654,62 @@ export const MODULE_FIELDS: Record<ModuleId, FieldDefinition[]> = {
     { id: 'shipdate', label: '送驗日期', type: 'date' },
     { id: 'assay', label: 'Assay', type: 'text' },
     { id: 'result', label: '結果', type: 'text' },
+  ],
+  bd: [
+    { id: 'sampleId', label: 'Sample ID', type: 'text' },
+    { id: 'collectDate', label: '採檢日期', type: 'date' },
+    {
+      id: 'result',
+      label: 'Result',
+      type: 'category',
+      options: ['Normal', 'Abnormal'],
+    },
+    { id: 'biotinidaseActivity', label: 'Biotinidase 活性', type: 'number' },
+  ],
+  cah: [
+    { id: 'sampleId', label: 'Sample ID', type: 'text' },
+    { id: 'collectDate', label: '採檢日期', type: 'date' },
+    {
+      id: 'result',
+      label: 'Result',
+      type: 'category',
+      options: ['Normal', 'Abnormal'],
+    },
+    { id: 'ohp17', label: '17-OHP', type: 'number' },
+  ],
+  dmd: [
+    { id: 'sampleId', label: 'Sample ID', type: 'text' },
+    { id: 'collectDate', label: '採檢日期', type: 'date' },
+    {
+      id: 'result',
+      label: 'Result',
+      type: 'category',
+      options: ['Normal', 'Abnormal'],
+    },
+    { id: 'ck', label: 'CK', type: 'number' },
+  ],
+  g6pd: [
+    { id: 'sampleId', label: 'Sample ID', type: 'text' },
+    { id: 'collectDate', label: '採檢日期', type: 'date' },
+    {
+      id: 'result',
+      label: 'Result',
+      type: 'category',
+      options: ['Normal', 'Abnormal'],
+    },
+    { id: 'g6pdActivity', label: 'G6PD 活性', type: 'number' },
+  ],
+  smaScid: [
+    { id: 'sampleId', label: 'Sample ID', type: 'text' },
+    { id: 'collectDate', label: '採檢日期', type: 'date' },
+    {
+      id: 'result',
+      label: 'Result',
+      type: 'category',
+      options: ['Normal', 'Abnormal'],
+    },
+    { id: 'smn1Copies', label: 'SMN1 Copies', type: 'number' },
+    { id: 'trec', label: 'TREC', type: 'number' },
   ],
 };
 

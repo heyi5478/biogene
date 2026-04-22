@@ -1,0 +1,11 @@
+[
+  {
+    "patientId": "d845c1da-5d37-5bc1-a6da-ec9702cab0a3",
+    "sampleName": "EXT-GAG-0003",
+    "specimenType": "Urine",
+    "technician": "外院Tech",
+    "result": "Borderline",
+    "DMGGAG": 180.0,
+    "CREATININE": 50.0
+  }
+]
