@@ -1,0 +1,18 @@
+[
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "sampleName": "MPS-2025-0045",
+    "MPS2": 8.5,
+    "TPP1": 12.3,
+    "MPS4A": 15.8,
+    "MPS6": 22.1
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "sampleName": "MPS-2025-0088",
+    "MPS2": 1.2,
+    "TPP1": 14.5,
+    "MPS4A": 18.2,
+    "MPS6": 25.6
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "sampleno": "OUT-2025-0034",
+    "shipdate": "2025-11-02",
+    "assay": "GLA gene full sequencing",
+    "result": "c.644A>G (p.N215S) heterozygous"
+  },
+  {
+    "patientId": "0083197f-74b9-566b-8944-1e847deea242",
+    "sampleno": "OUT-2025-0089",
+    "shipdate": "2025-10-05",
+    "assay": "PAH gene panel",
+    "result": "c.728G>A (p.R243Q) compound heterozygous"
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "sampleno": "OUT-2025-0112",
+    "shipdate": "2025-08-15",
+    "assay": "IDS gene full analysis",
+    "result": "c.1402C>T (p.R468W) hemizygous"
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "sampleno": "OUT-2025-0145",
+    "shipdate": "2025-11-20",
+    "assay": "MPS panel NGS",
+    "result": "Pending"
+  },
+  {
+    "patientId": "da34c89c-0452-5fbb-8c95-7c31976eb42e",
+    "sampleno": "OUT-2025-0178",
+    "shipdate": "2025-09-28",
+    "assay": "GBA gene sequencing",
+    "result": "c.1226A>G (p.N409S) homozygous"
+  },
+  {
+    "patientId": "756bcb48-4064-53e5-9dad-76e9c3fae071",
+    "sampleno": "OUT-2025-0201",
+    "shipdate": "2025-07-10",
+    "assay": "DDC gene analysis",
+    "result": "c.714+4A>T splice site mutation homozygous"
+  }
+]

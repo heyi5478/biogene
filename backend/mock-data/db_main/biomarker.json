@@ -1,0 +1,28 @@
+[
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "sampleName": "BM-2025-0156",
+    "dbsLysoGb3": 12.8,
+    "dbsLysoGL1": 5.2,
+    "dbsLysoSM": 28.4,
+    "plasmaLysoGb3": 18.6,
+    "plasmaLysoGL1": 7.8,
+    "plasmaLysoSM": 32.1
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "sampleName": "BM-2025-0210",
+    "dbsLysoGb3": 3.2,
+    "dbsLysoGL1": 2.1,
+    "dbsLysoSM": 8.5
+  },
+  {
+    "patientId": "da34c89c-0452-5fbb-8c95-7c31976eb42e",
+    "sampleName": "BM-2025-0285",
+    "dbsLysoGb3": 2.8,
+    "dbsLysoGL1": 45.2,
+    "dbsLysoSM": 12.5,
+    "plasmaLysoGb3": 3.5,
+    "plasmaLysoGL1": 68.8
+  }
+]

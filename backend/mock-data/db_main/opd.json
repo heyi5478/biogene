@@ -1,0 +1,111 @@
+[
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "visitDate": "2025-12-10",
+    "sex": "男",
+    "birthday": "1985-03-15",
+    "diagCode": "E75.21",
+    "diagName": "Fabry disease",
+    "subDiag1": "Chronic kidney disease, stage 3"
+  },
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "visitDate": "2025-09-05",
+    "sex": "男",
+    "birthday": "1985-03-15",
+    "diagCode": "E75.21",
+    "diagName": "Fabry disease",
+    "subDiag1": "Left ventricular hypertrophy"
+  },
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "visitDate": "2025-06-12",
+    "sex": "男",
+    "birthday": "1985-03-15",
+    "diagCode": "E75.21",
+    "diagName": "Fabry disease",
+    "subDiag1": "Proteinuria"
+  },
+  {
+    "patientId": "0083197f-74b9-566b-8944-1e847deea242",
+    "visitDate": "2025-11-28",
+    "sex": "女",
+    "birthday": "2018-07-22",
+    "diagCode": "E70.0",
+    "diagName": "Phenylketonuria",
+    "subDiag1": "Developmental delay"
+  },
+  {
+    "patientId": "0083197f-74b9-566b-8944-1e847deea242",
+    "visitDate": "2025-08-15",
+    "sex": "女",
+    "birthday": "2018-07-22",
+    "diagCode": "E70.0",
+    "diagName": "Phenylketonuria",
+    "subDiag1": "Growth retardation"
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "visitDate": "2025-12-01",
+    "sex": "男",
+    "birthday": "2020-01-08",
+    "diagCode": "E76.1",
+    "diagName": "Mucopolysaccharidosis type II",
+    "subDiag1": "Hepatosplenomegaly",
+    "subDiag2": "Hearing loss"
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "visitDate": "2025-09-18",
+    "sex": "男",
+    "birthday": "2020-01-08",
+    "diagCode": "E76.1",
+    "diagName": "Mucopolysaccharidosis type II",
+    "subDiag1": "Hepatosplenomegaly"
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "visitDate": "2025-06-20",
+    "sex": "男",
+    "birthday": "2020-01-08",
+    "diagCode": "E76.1",
+    "diagName": "Mucopolysaccharidosis type II",
+    "subDiag1": "Growth retardation"
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "visitDate": "2025-03-10",
+    "sex": "男",
+    "birthday": "2020-01-08",
+    "diagCode": "E76.1",
+    "diagName": "Mucopolysaccharidosis type II",
+    "subDiag1": "Hepatosplenomegaly"
+  },
+  {
+    "patientId": "da34c89c-0452-5fbb-8c95-7c31976eb42e",
+    "visitDate": "2025-10-22",
+    "sex": "女",
+    "birthday": "1992-11-03",
+    "diagCode": "E75.22",
+    "diagName": "Gaucher disease type 1",
+    "subDiag1": "Thrombocytopenia"
+  },
+  {
+    "patientId": "756bcb48-4064-53e5-9dad-76e9c3fae071",
+    "visitDate": "2025-11-15",
+    "sex": "男",
+    "birthday": "2015-05-18",
+    "diagCode": "E70.8",
+    "diagName": "AADC deficiency",
+    "subDiag1": "Dystonia"
+  },
+  {
+    "patientId": "756bcb48-4064-53e5-9dad-76e9c3fae071",
+    "visitDate": "2025-08-20",
+    "sex": "男",
+    "birthday": "2015-05-18",
+    "diagCode": "E70.8",
+    "diagName": "AADC deficiency",
+    "subDiag1": "Oculogyric crisis"
+  }
+]

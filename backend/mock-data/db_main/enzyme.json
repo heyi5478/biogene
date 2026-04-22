@@ -1,0 +1,38 @@
+[
+  {
+    "patientId": "4e645243-fe58-5f74-b0bf-4271b5fdc0bf",
+    "sampleName": "ENZ-2025-0112",
+    "specimenType": "Leukocyte",
+    "technician": "王小芳",
+    "result": "Deficient",
+    "MPS1": 2.1,
+    "enzymeMPS2": 45.8
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "sampleName": "ENZ-2025-0178",
+    "specimenType": "Leukocyte",
+    "technician": "陳建宏",
+    "result": "Deficient",
+    "MPS1": 15.2,
+    "enzymeMPS2": 0.8
+  },
+  {
+    "patientId": "81f899c6-bb0e-54b1-8d64-44117320ce52",
+    "sampleName": "ENZ-2025-0145",
+    "specimenType": "Plasma",
+    "technician": "王小芳",
+    "result": "Deficient",
+    "MPS1": 18.5,
+    "enzymeMPS2": 1.2
+  },
+  {
+    "patientId": "da34c89c-0452-5fbb-8c95-7c31976eb42e",
+    "sampleName": "ENZ-2025-0201",
+    "specimenType": "Leukocyte",
+    "technician": "陳建宏",
+    "result": "Deficient",
+    "MPS1": 22.5,
+    "enzymeMPS2": 48.2
+  }
+]
