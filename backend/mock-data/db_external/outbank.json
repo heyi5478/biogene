@@ -1,0 +1,9 @@
+[
+  {
+    "patientId": "8aa80c48-51f7-5104-a122-c3d3d5ac50e0",
+    "sampleno": "EXT-OUT-0077",
+    "shipdate": "2025-09-10",
+    "assay": "GAA gene sequencing",
+    "result": "c.1935C>A (p.D645E) heterozygous"
+  }
+]

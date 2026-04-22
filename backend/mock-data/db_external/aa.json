@@ -1,0 +1,16 @@
+[
+  {
+    "patientId": "d845c1da-5d37-5bc1-a6da-ec9702cab0a3",
+    "sampleName": "EXT-AA-0012",
+    "specimenType": "Plasma",
+    "result": "Abnormal",
+    "Gln": 610,
+    "Citr": 35,
+    "Ala": 340,
+    "Arg": 95,
+    "Leu": 140,
+    "Val": 210,
+    "Phe": 250,
+    "Tyr": 70
+  }
+]
