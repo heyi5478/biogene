@@ -572,6 +572,11 @@ export function ResultModules({ patient, activeModules }: ResultModulesProps) {
             gag: patient.gag.length,
             dnabank: patient.dnabank.length,
             outbank: patient.outbank.length,
+            bd: patient.bd.length,
+            cah: patient.cah.length,
+            dmd: patient.dmd.length,
+            g6pd: patient.g6pd.length,
+            smaScid: patient.smaScid.length,
           };
           const emptyModules = activeModules.filter(
             (id) => id !== 'basic' && moduleDataMap[id] === 0,
