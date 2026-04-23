@@ -43,7 +43,7 @@
 - [x] 6.3 手動：在 Network tab 確認只打 gateway（`http://localhost:8000`），未直接打 8001/8002/8003
 - [x] 6.4 更新 `frontend/README.md`（或 root `README.md`）：載明「本地開發需先啟動 `backend/scripts/dev.sh`」
 - [x] 6.5 `openspec validate wire-index-page-to-api --strict` 通過
-- [ ] 6.6 CI：PR 觸發後六個 job（lint / format / typecheck / test / build / e2e）全綠
+- [x] 6.6 CI：PR 觸發後六個 job（lint / format / typecheck / test / build / e2e）全綠
 
 ## 7. 最終清理
 
