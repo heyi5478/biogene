@@ -120,9 +120,9 @@ async def _post_json(
         raise _Upstream502(service, f"invalid JSON: {e}") from e
 
 
-def _merge_bundle(patient: dict, labs: dict, diseases: dict) -> dict:
-    """Combine patient base row + lab dict + disease dict into one bundle."""
-    return {**patient, **labs, **diseases}
+def _merge_bundle(patient: dict, opd: dict, labs: dict, diseases: dict) -> dict:
+    """Combine patient base row + opd + lab + disease bundles into one payload."""
+    return {**patient, **opd, **labs, **diseases}
 
 
 @app.get("/healthz")
@@ -139,16 +139,26 @@ async def list_patients() -> list[dict]:
 
     ids = [p["patientId"] for p in patients]
 
+    opd_task = _post_json(
+        _client, "svc-patient", f"{SVC_PATIENT_URL}/opd/batch", {"patientIds": ids}
+    )
     labs_task = _post_json(
         _client, "svc-lab", f"{SVC_LAB_URL}/labs/batch", {"patientIds": ids}
     )
     diseases_task = _post_json(
         _client, "svc-disease", f"{SVC_DISEASE_URL}/diseases/batch", {"patientIds": ids}
     )
-    labs_map, diseases_map = await asyncio.gather(labs_task, diseases_task)
+    opd_map, labs_map, diseases_map = await asyncio.gather(
+        opd_task, labs_task, diseases_task
+    )
 
     return [
-        _merge_bundle(p, labs_map.get(p["patientId"], {}), diseases_map.get(p["patientId"], {}))
+        _merge_bundle(
+            p,
+            opd_map.get(p["patientId"], {}),
+            labs_map.get(p["patientId"], {}),
+            diseases_map.get(p["patientId"], {}),
+        )
         for p in patients
     ]
 
@@ -166,17 +176,20 @@ async def get_patient(patient_id: str) -> dict:
             detail={"error": "patient_not_found", "patientId": patient_id},
         )
 
+    opd_task = _get_json(_client, "svc-patient", f"{SVC_PATIENT_URL}/opd/{patient_id}")
     labs_task = _get_json(_client, "svc-lab", f"{SVC_LAB_URL}/labs/{patient_id}")
     diseases_task = _get_json(
         _client, "svc-disease", f"{SVC_DISEASE_URL}/diseases/{patient_id}"
     )
-    labs, diseases = await asyncio.gather(labs_task, diseases_task)
+    opd, labs, diseases = await asyncio.gather(opd_task, labs_task, diseases_task)
+    if opd is None:
+        raise _Upstream502("svc-patient", "unexpected 404 on /opd")
     if labs is None:
         raise _Upstream502("svc-lab", "unexpected 404")
     if diseases is None:
         raise _Upstream502("svc-disease", "unexpected 404")
 
-    return _merge_bundle(patient, labs, diseases)
+    return _merge_bundle(patient, opd, labs, diseases)
 
 
 @app.exception_handler(_Upstream502)
