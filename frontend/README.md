@@ -36,6 +36,22 @@ npm i
 npm run dev
 ```
 
+## Backend API configuration
+
+The frontend reads the gateway base URL from the Vite env var `VITE_API_BASE_URL`.
+A dev default lives in `frontend/.env.development` (`http://localhost:8000`), which
+points at the FastAPI gateway started by the backend services. Copy
+`.env.example` to `.env.local` to override per machine.
+
+To run the full stack locally:
+
+1. Start the backend gateway and microservices so they are reachable at
+   `$VITE_API_BASE_URL` (see `backend/README.md`).
+2. From `frontend/`, run `npm run dev`.
+
+If `VITE_API_BASE_URL` is unset, the first call to the API client throws an
+error containing `VITE_API_BASE_URL is not set`.
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
