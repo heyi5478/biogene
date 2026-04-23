@@ -7,9 +7,8 @@ build/
 *.tsbuildinfo
 
 # Env / 機密
-.env
-.env.local
-.env.*.local
+.env*
+!.env.example
 
 # OS / 編輯器
 .DS_Store
