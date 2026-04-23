@@ -57,18 +57,6 @@ Records in `db_nbs/cah_tgal.json` MUST include a `cahId` field referencing a `ca
 - **AND** `load_mock.py` is run
 - **THEN** the validator MUST report the dangling reference and exit non-zero
 
-### Requirement: Frontend SHALL load JSON mock data via Vite JSON imports and join by patientId
-
-The file `frontend/src/data/mockData.ts` MUST import the JSON files from `backend/mock-data/` using Vite's native JSON import syntax, then join sample tables onto patient records by `patientId` to produce the existing `mockPatients: Patient[]` export. The join MUST happen at module load time (not async), and the exported shape MUST remain compatible with all existing consumers.
-
-#### Scenario: Existing consumer reads patient sample arrays
-- **WHEN** `frontend/src/components/ConditionResults.tsx` imports `mockPatients` and reads `patient.aa[0].Phe`
-- **THEN** the value MUST equal the value from `db_main/aa.json` row whose `patientId` matches the patient
-
-#### Scenario: Frontend build succeeds
-- **WHEN** `npm run build` is executed in `frontend/`
-- **THEN** Vite MUST resolve all JSON imports and produce a clean build with no errors
-
 ### Requirement: Mock data SHALL preserve the existing 5 main DB patients without behavioral regression
 
 The five existing patients in `db_main/patient.json` (chartno A1234567, B2345678, C3456789, D4567890, E5678901) MUST retain their current `name`, `birthday`, `sex`, `diagnosis*`, and all original sample data. Running existing condition templates against the new mock MUST produce the same hit counts as before this change.
