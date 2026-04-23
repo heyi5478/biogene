@@ -50,6 +50,17 @@ class AaRecord(_Base):
     Tyr: float | None = None
 
 
+class OpdRecord(_Base):
+    patientId: str
+    visitDate: str
+    sex: str
+    birthday: str
+    diagCode: str
+    diagName: str
+    subDiag1: str | None = None
+    subDiag2: str | None = None
+
+
 class MsmsRecord(_Base):
     patientId: str
     sampleName: str
@@ -218,6 +229,12 @@ class SmaScidRecord(_Base):
     trec: float | None = None
 
 
+class OpdBundle(_Base):
+    """Per-patient payload returned by svc-patient's /opd endpoints."""
+
+    opd: list[OpdRecord] = []
+
+
 class LabBundle(_Base):
     """Per-patient payload returned by svc-lab."""
 
@@ -252,6 +269,7 @@ class DiseaseBundle(_Base):
 class PatientBundle(Patient):
     """Gateway aggregate: patient base fields + all per-module arrays."""
 
+    opd: list[OpdRecord] = []
     aa: list[AaRecord] = []
     msms: list[MsmsRecord] = []
     biomarker: list[BiomarkerRecord] = []
@@ -274,6 +292,7 @@ class PatientBundle(Patient):
 __all__ = [
     "PatientSource",
     "Patient",
+    "OpdRecord",
     "AaRecord",
     "MsmsRecord",
     "BiomarkerRecord",
@@ -293,6 +312,7 @@ __all__ = [
     "TshSubRecord",
     "G6pdRecord",
     "SmaScidRecord",
+    "OpdBundle",
     "LabBundle",
     "DiseaseBundle",
     "PatientBundle",
