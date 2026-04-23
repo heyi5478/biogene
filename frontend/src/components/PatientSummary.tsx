@@ -1,5 +1,13 @@
 import React from 'react';
-import { Copy, Check, Calendar, Dna, ExternalLink } from 'lucide-react';
+import {
+  Copy,
+  Check,
+  Calendar,
+  Dna,
+  ExternalLink,
+  BarChart3,
+  Download,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,15 +17,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Patient, ModuleId } from '@/types/medical';
-
-function calcAge(birthday: string): number {
-  const today = new Date();
-  const birth = new Date(birthday);
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age -= 1;
-  return age;
-}
+import { ageInYears } from '@/utils/statsUtils';
+import { StatsDialog } from '@/components/stats/StatsDialog';
+import { ExportDialog } from '@/components/export/ExportDialog';
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = React.useState(false);
@@ -50,7 +52,9 @@ interface PatientSummaryProps {
 }
 
 export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
-  const age = calcAge(patient.birthday);
+  const [statsOpen, setStatsOpen] = React.useState(false);
+  const [exportOpen, setExportOpen] = React.useState(false);
+  const age = ageInYears(patient.birthday) ?? '—';
   const displayChartno =
     patient.chartno ?? patient.externalChartno ?? patient.nbsId ?? '—';
   const hasDna = patient.dnabank.length > 0;
@@ -136,8 +140,26 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
             </div>
           </div>
 
-          {/* Right: Quick jumps */}
-          <div className="flex max-w-[240px] flex-wrap justify-end gap-1">
+          {/* Right: Quick jumps + actions */}
+          <div className="flex max-w-[260px] flex-wrap justify-end gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => setStatsOpen(true)}
+            >
+              <BarChart3 className="mr-1 h-3 w-3" />
+              統計
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => setExportOpen(true)}
+            >
+              <Download className="mr-1 h-3 w-3" />
+              匯出
+            </Button>
             {jumpLinks
               .filter((l) => l.count > 0)
               .map((link) => (
@@ -154,6 +176,16 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
           </div>
         </div>
       </CardContent>
+      <StatsDialog
+        open={statsOpen}
+        onOpenChange={setStatsOpen}
+        patient={patient}
+      />
+      <ExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        patient={patient}
+      />
     </Card>
   );
 }
