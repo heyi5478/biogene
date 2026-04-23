@@ -116,6 +116,8 @@ jobs:
           pip install -e backend/svc-disease
       - name: Start backend services
         working-directory: .
+        env:
+          GATEWAY_CORS_ORIGIN: http://localhost:8080
         run: |
           nohup uvicorn svc_patient.app:app --host 127.0.0.1 --port 8001 > svc-patient.log 2>&1 &
           nohup uvicorn svc_lab.app:app     --host 127.0.0.1 --port 8002 > svc-lab.log 2>&1 &
