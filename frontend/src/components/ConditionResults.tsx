@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Patient,
   ConditionRow,
@@ -17,6 +18,7 @@ import {
   MODULE_DEFINITIONS,
   MODULE_FIELDS,
 } from '@/types/medical';
+import { CohortStatsPanel } from '@/components/stats/CohortStatsPanel';
 
 interface MatchedPatient {
   patient: Patient;
@@ -54,7 +56,7 @@ export function ConditionResults({
       return `${mod?.code || c.moduleId} / ${field?.label || c.fieldId} ${c.operator} ${c.value}${c.value2 ? `~${c.value2}` : ''}`;
     });
 
-  return (
+  const listContent = (
     <div className="space-y-3">
       {/* Condition summary */}
       <div className="flex flex-wrap items-center gap-2 px-1 py-2 text-xs">
@@ -144,6 +146,19 @@ export function ConditionResults({
         </div>
       )}
     </div>
+  );
+
+  return (
+    <Tabs defaultValue="list" className="space-y-2">
+      <TabsList>
+        <TabsTrigger value="list">名單</TabsTrigger>
+        <TabsTrigger value="cohort">族群統計</TabsTrigger>
+      </TabsList>
+      <TabsContent value="list">{listContent}</TabsContent>
+      <TabsContent value="cohort">
+        <CohortStatsPanel patients={matchedPatients.map((m) => m.patient)} />
+      </TabsContent>
+    </Tabs>
   );
 }
 
