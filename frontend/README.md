@@ -46,8 +46,19 @@ points at the FastAPI gateway started by the backend services. Copy
 To run the full stack locally:
 
 1. Start the backend gateway and microservices so they are reachable at
-   `$VITE_API_BASE_URL` (see `backend/README.md`).
+   `$VITE_API_BASE_URL`. From the repo root:
+   ```sh
+   bash backend/scripts/dev.sh
+   ```
+   This launches the four FastAPI services (gateway on :8000, plus
+   svc-patient/:8001, svc-lab/:8002, svc-disease/:8003). First-time setup
+   (virtualenv + editable installs) is documented in `backend/README.md`.
 2. From `frontend/`, run `npm run dev`.
+
+The Index page renders a loading skeleton while the patient list is being
+fetched and an error alert with a **重試** button if the gateway is
+unreachable. If you see the error alert, confirm the backend services are
+running and retry.
 
 If `VITE_API_BASE_URL` is unset, the first call to the API client throws an
 error containing `VITE_API_BASE_URL is not set`.

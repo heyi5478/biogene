@@ -1,7 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { Search, Database, ArrowLeft } from 'lucide-react';
+import { Search, Database, ArrowLeft, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { FilterPanel, QueryMode } from '@/components/FilterPanel';
 import { PatientSummary, PatientList } from '@/components/PatientSummary';
 import { SearchSummary } from '@/components/SearchSummary';
@@ -10,7 +12,7 @@ import {
   ConditionResults,
   evaluateConditions,
 } from '@/components/ConditionResults';
-import { mockPatients } from '@/data/mockData';
+import { usePatients } from '@/hooks/queries/usePatients';
 import {
   ModuleId,
   Patient,
@@ -39,6 +41,12 @@ const tabModuleMap: Record<string, ModuleId[]> = {
 };
 
 const Index = () => {
+  // Patient data from gateway
+  const { data: patients, isLoading, isError, error, refetch } = usePatients();
+  const isInitialLoading = isLoading && !patients;
+  const errorMessage =
+    error instanceof Error ? error.message : '發生未知錯誤，請稍後再試。';
+
   // Mode
   const [queryMode, setQueryMode] = useState<QueryMode>('patient');
 
@@ -64,7 +72,7 @@ const Index = () => {
   }, [searchQuery]);
 
   const results = submittedQuery
-    ? mockPatients.filter((p) => {
+    ? (patients ?? []).filter((p) => {
         const q = submittedQuery.toLowerCase();
         return (
           p.name.includes(submittedQuery) ||
@@ -116,7 +124,7 @@ const Index = () => {
   }, []);
 
   const conditionResults = conditionSubmitted
-    ? evaluateConditions(mockPatients, conditions, conditionLogic)
+    ? evaluateConditions(patients ?? [], conditions, conditionLogic)
     : [];
 
   // Mode switch
@@ -166,7 +174,28 @@ const Index = () => {
 
         {/* Right Content */}
         <main className="thin-scrollbar flex-1 space-y-3 overflow-y-auto p-4">
-          {queryMode === 'patient' ? (
+          {isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>無法載入患者資料</AlertTitle>
+              <AlertDescription className="space-y-3">
+                <p>{errorMessage}</p>
+                <Button size="sm" variant="outline" onClick={() => refetch()}>
+                  重試
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          {!isError && isInitialLoading && (
+            <div className="space-y-2" data-testid="patients-loading">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          )}
+          {!isError && !isInitialLoading && queryMode === 'patient' && (
             <>
               {/* Search Summary */}
               <SearchSummary
@@ -250,7 +279,8 @@ const Index = () => {
                 </>
               )}
             </>
-          ) : (
+          )}
+          {!isError && !isInitialLoading && queryMode !== 'patient' && (
             /* Condition query mode */
             <>
               {!conditionSubmitted && !conditionPatient && (
