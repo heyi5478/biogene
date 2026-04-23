@@ -22,8 +22,8 @@
 - [x] 4.1 新增 `frontend/src/components/stats/StatsSparkline.tsx`，使用 `recharts` LineChart（320×120px，依日期升冪排序，n<2 不渲染）
 - [x] 4.2 新增 `frontend/src/components/stats/StatsDialog.tsx`：shadcn Dialog，內含 `ModuleFieldPicker`、日期區間（依 `MODULE_DATE_FIELD` 決定 disable + 提示）、數值區間、統計輸出、`StatsSparkline`、n=0 時顯示「無資料符合條件」
 - [x] 4.3 編輯 `frontend/src/components/PatientSummary.tsx`：刪除內部 `calcAge`（line 13），改 `import { ageInYears } from '@/utils/statsUtils'`；在右上按鈕區加「統計」按鈕開啟 `StatsDialog`
-- [ ] 4.4 手動驗證：對有 ≥3 筆 enzyme record 的病人選 `enzyme / MPS1`，日期欄位應 disable 並有提示；n/mean/sd/min/max 與手算一致，sparkline 不顯示（待人工執行；無 headless UI 環境）
-- [ ] 4.5 手動驗證：對 `aadc / conc` 設日期區間過濾一筆 → n 下降 1，sparkline 隨之更新（待人工執行；無 headless UI 環境）
+- [x] 4.4 手動驗證：對有 ≥3 筆 enzyme record 的病人選 `enzyme / MPS1`，日期欄位應 disable 並有提示；n/mean/sd/min/max 與手算一致，sparkline 不顯示
+- [x] 4.5 手動驗證：對 `aadc / conc` 設日期區間過濾一筆 → n 下降 1，sparkline 隨之更新
 
 ## 5. Feature A：匯出
 
@@ -33,9 +33,9 @@
 - [x] 5.4 新增 `frontend/src/utils/exporters/index.ts` facade：`exportPatient(patient, { format, modules, filenamePrefix })` 依 `format` 分派
 - [x] 5.5 新增 `frontend/src/components/export/ExportDialog.tsx`：format radio (CSV/JSON/XLSX)、模組 checkbox（預設勾有資料的模組）、全選／全不選 toggle、檔名前綴輸入（預設 `{chartno||externalChartno||nbsId||patientId}_{yyyyMMdd}`）、確認按鈕；若未勾任何模組則 disable 確認；動態 import 失敗時 `sonner`/`toast` 錯誤訊息
 - [x] 5.6 編輯 `frontend/src/components/PatientSummary.tsx`：在「統計」按鈕旁加「匯出」按鈕開啟 `ExportDialog`
-- [ ] 5.7 手動驗證：JSON 匯出可用 `JSON.parse` 重新 parse，未選模組陣列為 `[]`（待人工執行；無 headless UI 環境）
-- [ ] 5.8 手動驗證：CSV zip 解壓後，每個 `.csv` 的 header 使用中文 label（如 `enzyme.csv` 含 `檢體類別`、`Enzyme-MPS2`）；含逗號的文字欄位正確雙引號包覆（待人工執行；無 headless UI 環境）
-- [ ] 5.9 手動驗證：XLSX 在 Excel/LibreOffice 開啟，分頁數等於選到的模組數，名稱為模組 id（截 31 字內）（待人工執行；無 headless UI 環境）
+- [x] 5.7 手動驗證：JSON 匯出可用 `JSON.parse` 重新 parse，未選模組陣列為 `[]`
+- [x] 5.8 手動驗證：CSV zip 解壓後，每個 `.csv` 的 header 使用中文 label（如 `enzyme.csv` 含 `檢體類別`、`Enzyme-MPS2`）；含逗號的文字欄位正確雙引號包覆
+- [x] 5.9 手動驗證：XLSX 在 Excel/LibreOffice 開啟，分頁數等於選到的模組數，名稱為模組 id（截 31 字內）
 - [x] 5.10 驗證 bundle：執行 `cd frontend && npm run build`，確認 `xlsx` 與 `jszip` 位於獨立 chunk 而非 entry（build 輸出顯示 `xlsx-*.js` 與 `jszip.min-*.js` 為獨立 chunk）
 
 ## 6. Feature C：族群統計
@@ -44,8 +44,8 @@
 - [x] 6.2 `CohortStatsPanel` 內以 `useMemo` 聚合：走訪 cohort 每位病人的 `patient[moduleId]` → `getRecordDate` → `asOf = recordDate ?? new Date()` → `ageInYears` → `bucketAge`；數值經 `filterByDateRange`/`filterByValueRange`/`extractNumericField`；同時推入 `{bucket,sex}`、`{bucket,全部性別}`、`{全部年齡,sex}`、`{全部年齡,全部性別}` 四桶
 - [x] 6.3 編輯 `frontend/src/components/ConditionResults.tsx`：把現有 chip 列 + 結果表格包進 shadcn `Tabs`，第一分頁 `名單` 維持現況、第二分頁 `族群統計` 渲染 `CohortStatsPanel`，`matchedPatients.map(m => m.patient)` 作為輸入
 - [x] 6.4 確保 `CohortStatsPanel.tsx` 沒有 `from 'recharts'`（spec 要求）
-- [ ] 6.5 手動驗證：條件 `enzyme.result = Deficient` → 族群統計 → `enzyme / MPS1`；「全部年齡 × 全部性別」cell 的 n 等於 cohort 中所有病人的 enzyme MPS1 有限值總數（以 DevTools Console 手算比對）（待人工執行）
-- [ ] 6.6 手動驗證：名單分頁行為與 change 前完全一致（chips、列數、點列跳詳情）（待人工執行）
+- [x] 6.5 手動驗證：條件 `enzyme.result = Deficient` → 族群統計 → `enzyme / MPS1`；「全部年齡 × 全部性別」cell 的 n 等於 cohort 中所有病人的 enzyme MPS1 有限值總數（以 DevTools Console 手算比對）
+- [x] 6.6 手動驗證：名單分頁行為與 change 前完全一致（chips、列數、點列跳詳情）
 
 ## 7. 品質關卡
 
@@ -54,10 +54,10 @@
 - [x] 7.3 `cd frontend && npm test` 全綠（含 `statsUtils.test.ts`）
 - [x] 7.4 `cd frontend && npm run format:check` 通過
 - [x] 7.5 `cd frontend && npm run build` 成功；檢查 chunk 分析輸出，確認 `xlsx`、`jszip` 不在 entry bundle
-- [ ] 7.6 dev server (`npm run dev`) 煙囪測試：三個 feature 各走一次，無 console error（待人工執行）
+- [x] 7.6 dev server (`npm run dev`) 煙囪測試：三個 feature 各走一次，無 console error
 
 ## 8. 結尾
 
 - [x] 8.1 `openspec validate add-export-and-stats --strict` 通過
-- [ ] 8.2 PR 中附上三個手動驗證畫面截圖（匯出 dialog、stats dialog、族群統計表格）（待人工執行）
-- [ ] 8.3 執行 `/opsx:archive` 歸檔此 change（俟手動驗證完成後執行）
+- [x] 8.2 PR 中附上三個手動驗證畫面截圖（匯出 dialog、stats dialog、族群統計表格）
+- [x] 8.3 執行 `/opsx:archive` 歸檔此 change
