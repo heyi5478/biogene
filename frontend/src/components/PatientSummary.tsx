@@ -143,7 +143,7 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
           {/* Right: Quick jumps + actions */}
           <div className="flex max-w-[260px] flex-wrap justify-end gap-1">
             <Button
-              variant="outline"
+              variant="success"
               size="sm"
               className="h-6 px-2 text-[10px]"
               onClick={() => setStatsOpen(true)}
@@ -152,7 +152,7 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
               統計
             </Button>
             <Button
-              variant="outline"
+              variant="info"
               size="sm"
               className="h-6 px-2 text-[10px]"
               onClick={() => setExportOpen(true)}
