@@ -1,40 +1,10 @@
-import React from 'react';
-import { Copy, Check, Calendar, Dna, ExternalLink } from 'lucide-react';
+import { Calendar, Dna, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { Patient, ModuleId } from '@/types/medical';
 import { ageInYears } from '@/utils/statsUtils';
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = React.useState(false);
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(text);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-          }}
-          className="ml-1 inline-flex items-center text-muted-foreground hover:text-foreground"
-        >
-          {copied ? (
-            <Check className="h-3 w-3 text-emerald-600" />
-          ) : (
-            <Copy className="h-3 w-3" />
-          )}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent className="text-xs">複製病歷號</TooltipContent>
-    </Tooltip>
-  );
-}
+import { CopyButton } from '@/components/CopyButton';
 
 interface PatientSummaryProps {
   patient: Patient;
