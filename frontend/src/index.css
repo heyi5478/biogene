@@ -128,7 +128,7 @@
   /* Compact table styles for medical data */
   .medical-table th,
   .medical-table td {
-    @apply px-2 py-1.5 text-xs;
+    @apply px-2 py-1.5 text-left text-xs;
   }
 
   .medical-table th {
