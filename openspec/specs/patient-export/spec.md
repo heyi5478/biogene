@@ -4,18 +4,25 @@
 TBD - created by archiving change add-export-and-stats. Update Purpose after archive.
 ## Requirements
 
-### Requirement: PatientSummary SHALL expose an export entry point
+### Requirement: PatientActions SHALL expose an export entry point
 
-The `frontend/src/components/PatientSummary.tsx` component MUST render an "匯出" button adjacent to its existing quick-jump chip area. Clicking the button MUST open an `ExportDialog` scoped to the currently displayed `patient`. The button MUST be visually consistent with the existing quick-jump buttons (shadcn `<Button size="sm" variant="outline">` with the same height class).
+`frontend/src/components/PatientActions.tsx` MUST render a "匯出" button that opens an `ExportDialog` scoped to the currently displayed `patient`. The component MUST accept the patient as a prop and MUST own the dialog's open/close state locally. The "匯出" button MUST sit adjacent to the "統計" button inside `PatientActions`.
 
-#### Scenario: Button appears on every patient detail view
-- **WHEN** a patient is selected (either by single-match search or `PatientList` click)
-- **THEN** `PatientSummary` MUST render the "匯出" button
-- **AND** the button MUST be enabled whenever `patient` is non-null
+`PatientActions` MUST be rendered on the same row as the `TabsList` in `frontend/src/pages/Index.tsx`, positioned to the right of the tab triggers, so that the export entry point is always visible while the user browses any tab (`全部 / 基本資料 / 門診 / 檢驗 / 檢體 / 新生兒篩檢`).
 
-#### Scenario: Button opens the export dialog
-- **WHEN** the user clicks the "匯出" button
-- **THEN** an `ExportDialog` MUST open with the same `patient` reference passed in as prop
+The "匯出" button MUST be enabled whenever a patient is displayed; it MUST NOT be disabled, hidden, or gated by which tab is active.
+
+#### Scenario: Export button renders inside PatientActions on every tab
+
+- **WHEN** a patient is selected (either via single-match search or `PatientList` click) and any tab is active
+- **THEN** `PatientActions` MUST render a "匯出" button on the tab row
+- **AND** `PatientSummary` MUST NOT render a "匯出" button
+- **AND** the button MUST be enabled
+
+#### Scenario: Clicking the export button opens the ExportDialog
+
+- **WHEN** the user clicks the "匯出" button in `PatientActions`
+- **THEN** an `ExportDialog` MUST open with the same `patient` reference passed into `PatientActions`
 - **AND** the dialog MUST NOT alter any state outside itself until the user confirms
 
 ### Requirement: ExportDialog SHALL offer three formats and per-module selection
