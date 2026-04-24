@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,13 @@ export function StatsDialog({ open, onOpenChange, patient }: StatsDialogProps) {
   const dateField = moduleId ? MODULE_DATE_FIELD[moduleId] : null;
   const isDateless = !!moduleId && dateField === null;
 
+  // Defer inputs that drive the heavy memo chain so typing/switching stays responsive
+  const deferredFieldId = useDeferredValue(picker.fieldId);
+  const deferredDateMin = useDeferredValue(dateMin);
+  const deferredDateMax = useDeferredValue(dateMax);
+  const deferredValueMin = useDeferredValue(valueMin);
+  const deferredValueMax = useDeferredValue(valueMax);
+
   const records = useMemo<Record<string, unknown>[]>(() => {
     if (!moduleId) return [];
     const arr = (patient as unknown as Record<string, unknown>)[moduleId];
@@ -48,22 +55,24 @@ export function StatsDialog({ open, onOpenChange, patient }: StatsDialogProps) {
   }, [moduleId, patient]);
 
   const filtered = useMemo(() => {
-    if (!moduleId || !picker.fieldId) return [];
+    if (!moduleId || !deferredFieldId) return [];
     let xs = records.slice();
     if (dateField) {
       xs = filterByDateRange(
         xs,
         (r) => getRecordDate(moduleId, r),
-        dateMin || undefined,
-        dateMax || undefined,
+        deferredDateMin || undefined,
+        deferredDateMax || undefined,
       );
     }
-    const minNum = valueMin === '' ? undefined : Number(valueMin);
-    const maxNum = valueMax === '' ? undefined : Number(valueMax);
+    const minNum =
+      deferredValueMin === '' ? undefined : Number(deferredValueMin);
+    const maxNum =
+      deferredValueMax === '' ? undefined : Number(deferredValueMax);
     xs = filterByValueRange(
       xs,
       (r) => {
-        const v = (r as Record<string, unknown>)[picker.fieldId];
+        const v = (r as Record<string, unknown>)[deferredFieldId];
         return typeof v === 'number' ? v : null;
       },
       Number.isFinite(minNum) ? minNum : undefined,
@@ -73,17 +82,17 @@ export function StatsDialog({ open, onOpenChange, patient }: StatsDialogProps) {
   }, [
     records,
     moduleId,
-    picker.fieldId,
+    deferredFieldId,
     dateField,
-    dateMin,
-    dateMax,
-    valueMin,
-    valueMax,
+    deferredDateMin,
+    deferredDateMax,
+    deferredValueMin,
+    deferredValueMax,
   ]);
 
   const values = useMemo(
-    () => extractNumericField(filtered, picker.fieldId),
-    [filtered, picker.fieldId],
+    () => extractNumericField(filtered, deferredFieldId),
+    [filtered, deferredFieldId],
   );
 
   const stats = useMemo(() => summarize(values), [values]);
@@ -93,13 +102,13 @@ export function StatsDialog({ open, onOpenChange, patient }: StatsDialogProps) {
     return filtered
       .map((r) => {
         const date = getRecordDate(moduleId, r);
-        const raw = (r as Record<string, unknown>)[picker.fieldId];
+        const raw = (r as Record<string, unknown>)[deferredFieldId];
         const value = typeof raw === 'number' ? raw : NaN;
         if (!date || !Number.isFinite(value)) return null;
         return { date, value };
       })
       .filter((p): p is { date: string; value: number } => p !== null);
-  }, [filtered, moduleId, dateField, picker.fieldId]);
+  }, [filtered, moduleId, dateField, deferredFieldId]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
