@@ -119,4 +119,3 @@ export function PatientSummary({ patient, onJumpTo }: PatientSummaryProps) {
     </Card>
   );
 }
-
