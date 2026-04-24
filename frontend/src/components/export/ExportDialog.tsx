@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useActionState, useEffect, useMemo, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -49,6 +50,29 @@ function defaultSelectedModules(patient: Patient): ModuleId[] {
   });
 }
 
+function CancelButton({ onCancel }: { onCancel: () => void }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onCancel}
+      disabled={pending}
+    >
+      取消
+    </Button>
+  );
+}
+
+function SubmitButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={disabled || pending}>
+      {pending ? '處理中…' : '匯出'}
+    </Button>
+  );
+}
+
 export function ExportDialog({
   open,
   onOpenChange,
@@ -59,14 +83,29 @@ export function ExportDialog({
     () => new Set(defaultSelectedModules(patient)),
   );
   const [prefix, setPrefix] = useState(() => defaultPrefix(patient));
-  const [busy, setBusy] = useState(false);
+
+  const [, submitAction] = useActionState(async () => {
+    try {
+      await exportPatient(patient, {
+        format,
+        modules: EXPORTABLE_MODULES.filter((id) => selected.has(id)),
+        filenamePrefix: prefix.trim(),
+      });
+      onOpenChange(false);
+      return null;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : '匯出失敗，請稍後再試';
+      toast.error(`匯出失敗：${message}`);
+      return message;
+    }
+  }, null);
 
   useEffect(() => {
     if (open) {
       setSelected(new Set(defaultSelectedModules(patient)));
       setPrefix(defaultPrefix(patient));
       setFormat('csv');
-      setBusy(false);
     }
   }, [open, patient]);
 
@@ -92,135 +131,113 @@ export function ExportDialog({
     });
   };
 
-  const canConfirm = selected.size > 0 && prefix.trim().length > 0 && !busy;
-
-  const handleConfirm = async () => {
-    setBusy(true);
-    try {
-      await exportPatient(patient, {
-        format,
-        modules: EXPORTABLE_MODULES.filter((id) => selected.has(id)),
-        filenamePrefix: prefix.trim(),
-      });
-      onOpenChange(false);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : '匯出失敗，請稍後再試';
-      toast.error(`匯出失敗：${message}`);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const canConfirm = selected.size > 0 && prefix.trim().length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle>匯出 — {patient.name}</DialogTitle>
-        </DialogHeader>
+        <form action={submitAction}>
+          <DialogHeader>
+            <DialogTitle>匯出 — {patient.name}</DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <Label className="mb-2 block text-xs font-medium text-muted-foreground">
-              格式
-            </Label>
-            <RadioGroup
-              value={format}
-              onValueChange={(v) => setFormat(v as ExportFormat)}
-              className="flex gap-4"
-            >
-              <div className="flex items-center gap-2 text-sm">
-                <RadioGroupItem id="export-format-csv" value="csv" />
-                <Label htmlFor="export-format-csv" className="text-sm">
-                  CSV (zip)
-                </Label>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <RadioGroupItem id="export-format-json" value="json" />
-                <Label htmlFor="export-format-json" className="text-sm">
-                  JSON
-                </Label>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <RadioGroupItem id="export-format-xlsx" value="xlsx" />
-                <Label htmlFor="export-format-xlsx" className="text-sm">
-                  XLSX
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <Label className="text-xs font-medium text-muted-foreground">
-                模組
+          <div className="space-y-4">
+            <div>
+              <Label className="mb-2 block text-xs font-medium text-muted-foreground">
+                格式
               </Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-[10px]"
-                onClick={toggleAll}
+              <RadioGroup
+                value={format}
+                onValueChange={(v) => setFormat(v as ExportFormat)}
+                className="flex gap-4"
               >
-                {allChecked ? '全不選' : '全選'}
-              </Button>
+                <div className="flex items-center gap-2 text-sm">
+                  <RadioGroupItem id="export-format-csv" value="csv" />
+                  <Label htmlFor="export-format-csv" className="text-sm">
+                    CSV (zip)
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <RadioGroupItem id="export-format-json" value="json" />
+                  <Label htmlFor="export-format-json" className="text-sm">
+                    JSON
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <RadioGroupItem id="export-format-xlsx" value="xlsx" />
+                  <Label htmlFor="export-format-xlsx" className="text-sm">
+                    XLSX
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
-            <div className="grid max-h-60 grid-cols-2 gap-1 overflow-y-auto rounded-md border border-border p-2">
-              {EXPORTABLE_MODULES.map((id) => {
-                const def = MODULE_DEFINITIONS.find((m) => m.id === id);
-                const arr = (patient as unknown as Record<string, unknown>)[id];
-                const count = Array.isArray(arr) ? arr.length : 0;
-                const checkboxId = `export-module-${id}`;
-                return (
-                  <div
-                    key={id}
-                    className="flex items-center gap-2 rounded px-1 py-1 text-xs hover:bg-accent/40"
-                  >
-                    <Checkbox
-                      id={checkboxId}
-                      checked={selected.has(id)}
-                      onCheckedChange={() => toggleOne(id)}
-                    />
-                    <Label
-                      htmlFor={checkboxId}
-                      className="flex-1 cursor-pointer text-xs font-normal"
+
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  模組
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[10px]"
+                  onClick={toggleAll}
+                >
+                  {allChecked ? '全不選' : '全選'}
+                </Button>
+              </div>
+              <div className="grid max-h-60 grid-cols-2 gap-1 overflow-y-auto rounded-md border border-border p-2">
+                {EXPORTABLE_MODULES.map((id) => {
+                  const def = MODULE_DEFINITIONS.find((m) => m.id === id);
+                  const arr = (patient as unknown as Record<string, unknown>)[
+                    id
+                  ];
+                  const count = Array.isArray(arr) ? arr.length : 0;
+                  const checkboxId = `export-module-${id}`;
+                  return (
+                    <div
+                      key={id}
+                      className="flex items-center gap-2 rounded px-1 py-1 text-xs hover:bg-accent/40"
                     >
-                      {def?.code ?? id}{' '}
-                      <span className="text-muted-foreground">({count})</span>
-                    </Label>
-                  </div>
-                );
-              })}
+                      <Checkbox
+                        id={checkboxId}
+                        checked={selected.has(id)}
+                        onCheckedChange={() => toggleOne(id)}
+                      />
+                      <Label
+                        htmlFor={checkboxId}
+                        className="flex-1 cursor-pointer text-xs font-normal"
+                      >
+                        {def?.code ?? id}{' '}
+                        <span className="text-muted-foreground">({count})</span>
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label
+                htmlFor="export-filename"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
+                檔名前綴
+              </Label>
+              <Input
+                id="export-filename"
+                value={prefix}
+                onChange={(e) => setPrefix(e.target.value)}
+              />
             </div>
           </div>
 
-          <div>
-            <Label
-              htmlFor="export-filename"
-              className="mb-1 block text-xs font-medium text-muted-foreground"
-            >
-              檔名前綴
-            </Label>
-            <Input
-              id="export-filename"
-              value={prefix}
-              onChange={(e) => setPrefix(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={busy}
-          >
-            取消
-          </Button>
-          <Button onClick={handleConfirm} disabled={!canConfirm}>
-            {busy ? '處理中…' : '匯出'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <CancelButton onCancel={() => onOpenChange(false)} />
+            <SubmitButton disabled={!canConfirm} />
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
