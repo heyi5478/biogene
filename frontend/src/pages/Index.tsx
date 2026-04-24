@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { FilterPanel, QueryMode } from '@/components/FilterPanel';
 import { PatientSummary, PatientList } from '@/components/PatientSummary';
+import { PatientActions } from '@/components/PatientActions';
 import { SearchSummary } from '@/components/SearchSummary';
 import { ResultModules } from '@/components/ResultModules';
 import {
@@ -260,26 +261,29 @@ const Index = () => {
                     onJumpTo={handleJumpTo}
                   />
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="h-8">
-                      <TabsTrigger value="all" className="h-7 text-xs">
-                        全部
-                      </TabsTrigger>
-                      <TabsTrigger value="basic" className="h-7 text-xs">
-                        基本資料
-                      </TabsTrigger>
-                      <TabsTrigger value="opd" className="h-7 text-xs">
-                        門診
-                      </TabsTrigger>
-                      <TabsTrigger value="lab" className="h-7 text-xs">
-                        檢驗
-                      </TabsTrigger>
-                      <TabsTrigger value="specimen" className="h-7 text-xs">
-                        檢體
-                      </TabsTrigger>
-                      <TabsTrigger value="nbs" className="h-7 text-xs">
-                        新生兒篩檢
-                      </TabsTrigger>
-                    </TabsList>
+                    <div className="flex items-center justify-between gap-2">
+                      <TabsList className="h-8">
+                        <TabsTrigger value="all" className="h-7 text-xs">
+                          全部
+                        </TabsTrigger>
+                        <TabsTrigger value="basic" className="h-7 text-xs">
+                          基本資料
+                        </TabsTrigger>
+                        <TabsTrigger value="opd" className="h-7 text-xs">
+                          門診
+                        </TabsTrigger>
+                        <TabsTrigger value="lab" className="h-7 text-xs">
+                          檢驗
+                        </TabsTrigger>
+                        <TabsTrigger value="specimen" className="h-7 text-xs">
+                          檢體
+                        </TabsTrigger>
+                        <TabsTrigger value="nbs" className="h-7 text-xs">
+                          新生兒篩檢
+                        </TabsTrigger>
+                      </TabsList>
+                      <PatientActions patient={displayPatient} />
+                    </div>
                     <TabsContent value={activeTab} className="mt-3">
                       <ResultModules
                         patient={displayPatient}
@@ -336,26 +340,29 @@ const Index = () => {
                     onJumpTo={handleJumpTo}
                   />
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="h-8">
-                      <TabsTrigger value="all" className="h-7 text-xs">
-                        全部
-                      </TabsTrigger>
-                      <TabsTrigger value="basic" className="h-7 text-xs">
-                        基本資料
-                      </TabsTrigger>
-                      <TabsTrigger value="opd" className="h-7 text-xs">
-                        門診
-                      </TabsTrigger>
-                      <TabsTrigger value="lab" className="h-7 text-xs">
-                        檢驗
-                      </TabsTrigger>
-                      <TabsTrigger value="specimen" className="h-7 text-xs">
-                        檢體
-                      </TabsTrigger>
-                      <TabsTrigger value="nbs" className="h-7 text-xs">
-                        新生兒篩檢
-                      </TabsTrigger>
-                    </TabsList>
+                    <div className="flex items-center justify-between gap-2">
+                      <TabsList className="h-8">
+                        <TabsTrigger value="all" className="h-7 text-xs">
+                          全部
+                        </TabsTrigger>
+                        <TabsTrigger value="basic" className="h-7 text-xs">
+                          基本資料
+                        </TabsTrigger>
+                        <TabsTrigger value="opd" className="h-7 text-xs">
+                          門診
+                        </TabsTrigger>
+                        <TabsTrigger value="lab" className="h-7 text-xs">
+                          檢驗
+                        </TabsTrigger>
+                        <TabsTrigger value="specimen" className="h-7 text-xs">
+                          檢體
+                        </TabsTrigger>
+                        <TabsTrigger value="nbs" className="h-7 text-xs">
+                          新生兒篩檢
+                        </TabsTrigger>
+                      </TabsList>
+                      <PatientActions patient={conditionPatient} />
+                    </div>
                     <TabsContent value={activeTab} className="mt-3">
                       <ResultModules
                         patient={conditionPatient}
