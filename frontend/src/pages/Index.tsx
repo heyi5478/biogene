@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useTransition } from 'react';
 import { Search, Database, ArrowLeft, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,9 @@ const Index = () => {
   const errorMessage =
     error instanceof Error ? error.message : '發生未知錯誤，請稍後再試。';
 
+  // Non-urgent updates for heavy search/filter work
+  const [, startSearchTransition] = useTransition();
+
   // Mode
   const [queryMode, setQueryMode] = useState<QueryMode>('patient');
 
@@ -69,8 +72,10 @@ const Index = () => {
 
   // Patient query handlers
   const handleSearch = useCallback(() => {
-    setSubmittedQuery(searchQuery);
-    setSelectedPatient(null);
+    startSearchTransition(() => {
+      setSubmittedQuery(searchQuery);
+      setSelectedPatient(null);
+    });
   }, [searchQuery]);
 
   const results = submittedQuery
@@ -115,8 +120,10 @@ const Index = () => {
 
   // Condition query handlers
   const handleConditionSearch = useCallback(() => {
-    setConditionSubmitted(true);
-    setConditionPatient(null);
+    startSearchTransition(() => {
+      setConditionSubmitted(true);
+      setConditionPatient(null);
+    });
   }, []);
 
   const handleConditionClear = useCallback(() => {
