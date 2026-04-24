@@ -11,7 +11,6 @@ NBS sub-tables are joined in memory (``cah_tgal`` by ``cahId`` into its parent
 
 from __future__ import annotations
 
-import logging
 import sys
 from collections import defaultdict
 from contextlib import asynccontextmanager
@@ -21,9 +20,14 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from shared.data_loader import load_all, validate
+from shared.logging import (
+    configure_logging,
+    install_exception_handlers,
+    install_middleware,
+)
 from shared.schemas import DiseaseBundle
 
-log = logging.getLogger("svc-disease")
+log = configure_logging("svc-disease")
 
 # Module -> which database owns it. Output key is the dict key; db/table the value.
 _MAIN_MODULES = {
@@ -145,8 +149,8 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="svc-disease", lifespan=lifespan)
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+install_middleware(app, log)
+install_exception_handlers(app, log)
 
 
 @app.get("/healthz")
