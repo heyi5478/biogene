@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -8,27 +8,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Patient, ModuleId, MODULE_DEFINITIONS } from '@/types/medical';
-
-function CopyBtn({ text }: { text: string }) {
-  const [copied, setCopied] = React.useState(false);
-  return (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      }}
-      className="inline-flex text-muted-foreground hover:text-foreground"
-    >
-      {copied ? (
-        <Check className="h-3 w-3 text-emerald-600" />
-      ) : (
-        <Copy className="h-3 w-3" />
-      )}
-    </button>
-  );
-}
+import { CopyBtn } from '@/components/ResultModules/CopyBtn';
 
 interface ModuleSectionProps {
   id: string;
