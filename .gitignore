@@ -16,6 +16,9 @@ build/
 .idea/
 *.swp
 
+# Claude Code local tooling
+.claude/worktrees/
+
 # Python (backend/)
 .venv/
 __pycache__/
