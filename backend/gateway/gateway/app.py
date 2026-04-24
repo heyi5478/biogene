@@ -15,7 +15,6 @@ responses into ``PatientBundle`` objects whose shape matches the frontend's
 from __future__ import annotations
 
 import asyncio
-import logging
 import os
 import sys
 from contextlib import asynccontextmanager
@@ -28,9 +27,14 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from shared.data_loader import validate
+from shared.logging import (
+    configure_logging,
+    install_exception_handlers,
+    install_middleware,
+)
 from shared.schemas import PatientBundle
 
-log = logging.getLogger("gateway")
+log = configure_logging("gateway")
 
 SVC_PATIENT_URL = os.getenv("SVC_PATIENT_URL", "http://127.0.0.1:8001")
 SVC_LAB_URL = os.getenv("SVC_LAB_URL", "http://127.0.0.1:8002")
@@ -74,7 +78,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+install_middleware(app, log)
+install_exception_handlers(app, log)
 
 
 class _Upstream502(Exception):
@@ -87,10 +92,14 @@ class _Upstream502(Exception):
 
 
 async def _get_json(
-    client: httpx.AsyncClient, service: str, url: str
+    client: httpx.AsyncClient,
+    service: str,
+    url: str,
+    *,
+    headers: dict | None = None,
 ) -> Any:
     try:
-        resp = await client.get(url)
+        resp = await client.get(url, headers=headers)
     except httpx.HTTPError as e:
         raise _Upstream502(service, f"connection error: {e}") from e
     if resp.status_code >= 500:
@@ -106,10 +115,15 @@ async def _get_json(
 
 
 async def _post_json(
-    client: httpx.AsyncClient, service: str, url: str, payload: dict
+    client: httpx.AsyncClient,
+    service: str,
+    url: str,
+    payload: dict,
+    *,
+    headers: dict | None = None,
 ) -> Any:
     try:
-        resp = await client.post(url, json=payload)
+        resp = await client.post(url, json=payload, headers=headers)
     except httpx.HTTPError as e:
         raise _Upstream502(service, f"connection error: {e}") from e
     if resp.status_code >= 500 or resp.status_code < 200:
@@ -131,22 +145,29 @@ def healthz() -> dict:
 
 
 @app.get("/patients", response_model=list[PatientBundle])
-async def list_patients() -> list[dict]:
+async def list_patients(request: Request) -> list[dict]:
     assert _client is not None, "httpx client not initialized"
-    patients = await _get_json(_client, "svc-patient", f"{SVC_PATIENT_URL}/patients")
+    headers = {"X-Request-ID": request.state.request_id}
+
+    patients = await _get_json(
+        _client, "svc-patient", f"{SVC_PATIENT_URL}/patients", headers=headers
+    )
     if patients is None:
         raise _Upstream502("svc-patient", "unexpected 404 on /patients")
 
     ids = [p["patientId"] for p in patients]
 
     opd_task = _post_json(
-        _client, "svc-patient", f"{SVC_PATIENT_URL}/opd/batch", {"patientIds": ids}
+        _client, "svc-patient", f"{SVC_PATIENT_URL}/opd/batch",
+        {"patientIds": ids}, headers=headers,
     )
     labs_task = _post_json(
-        _client, "svc-lab", f"{SVC_LAB_URL}/labs/batch", {"patientIds": ids}
+        _client, "svc-lab", f"{SVC_LAB_URL}/labs/batch",
+        {"patientIds": ids}, headers=headers,
     )
     diseases_task = _post_json(
-        _client, "svc-disease", f"{SVC_DISEASE_URL}/diseases/batch", {"patientIds": ids}
+        _client, "svc-disease", f"{SVC_DISEASE_URL}/diseases/batch",
+        {"patientIds": ids}, headers=headers,
     )
     opd_map, labs_map, diseases_map = await asyncio.gather(
         opd_task, labs_task, diseases_task
@@ -164,11 +185,13 @@ async def list_patients() -> list[dict]:
 
 
 @app.get("/patients/{patient_id}", response_model=PatientBundle)
-async def get_patient(patient_id: str) -> dict:
+async def get_patient(patient_id: str, request: Request) -> dict:
     assert _client is not None, "httpx client not initialized"
+    headers = {"X-Request-ID": request.state.request_id}
 
     patient = await _get_json(
-        _client, "svc-patient", f"{SVC_PATIENT_URL}/patients/{patient_id}"
+        _client, "svc-patient", f"{SVC_PATIENT_URL}/patients/{patient_id}",
+        headers=headers,
     )
     if patient is None:
         raise HTTPException(
@@ -176,10 +199,17 @@ async def get_patient(patient_id: str) -> dict:
             detail={"error": "patient_not_found", "patientId": patient_id},
         )
 
-    opd_task = _get_json(_client, "svc-patient", f"{SVC_PATIENT_URL}/opd/{patient_id}")
-    labs_task = _get_json(_client, "svc-lab", f"{SVC_LAB_URL}/labs/{patient_id}")
+    opd_task = _get_json(
+        _client, "svc-patient", f"{SVC_PATIENT_URL}/opd/{patient_id}",
+        headers=headers,
+    )
+    labs_task = _get_json(
+        _client, "svc-lab", f"{SVC_LAB_URL}/labs/{patient_id}",
+        headers=headers,
+    )
     diseases_task = _get_json(
-        _client, "svc-disease", f"{SVC_DISEASE_URL}/diseases/{patient_id}"
+        _client, "svc-disease", f"{SVC_DISEASE_URL}/diseases/{patient_id}",
+        headers=headers,
     )
     opd, labs, diseases = await asyncio.gather(opd_task, labs_task, diseases_task)
     if opd is None:
@@ -193,8 +223,12 @@ async def get_patient(patient_id: str) -> dict:
 
 
 @app.exception_handler(_Upstream502)
-async def _upstream_handler(_: Request, exc: _Upstream502) -> JSONResponse:
-    log.warning("upstream failure service=%s reason=%s", exc.service, exc.reason)
+async def _upstream_handler(request: Request, exc: _Upstream502) -> JSONResponse:
+    rid = getattr(request.state, "request_id", None) or "-"
+    log.warning(
+        "upstream failure request_id=%s service=%s reason=%s",
+        rid, exc.service, exc.reason,
+    )
     return JSONResponse(
         status_code=502,
         content={"error": "upstream_unavailable", "service": exc.service},

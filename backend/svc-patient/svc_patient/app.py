@@ -8,7 +8,6 @@ caches, then serves them via HTTP. This service is internal — the gateway
 
 from __future__ import annotations
 
-import logging
 import sys
 from collections import defaultdict
 from contextlib import asynccontextmanager
@@ -19,9 +18,14 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from shared.data_loader import load_all, validate
+from shared.logging import (
+    configure_logging,
+    install_exception_handlers,
+    install_middleware,
+)
 from shared.schemas import OpdBundle, Patient
 
-log = logging.getLogger("svc-patient")
+log = configure_logging("svc-patient")
 
 # In-memory cache populated in lifespan. Dict for O(1) single-patient lookup,
 # plus an ordered list to preserve JSON file order for GET /patients.
@@ -66,8 +70,8 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="svc-patient", lifespan=lifespan)
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+install_middleware(app, log)
+install_exception_handlers(app, log)
 
 
 @app.get("/healthz")
