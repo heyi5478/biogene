@@ -339,7 +339,7 @@ export function ConditionBuilder({
           執行條件查詢
         </Button>
         <Button
-          variant="outline"
+          variant="destructive"
           size="sm"
           onClick={onClear}
           className="h-7 w-full text-xs"

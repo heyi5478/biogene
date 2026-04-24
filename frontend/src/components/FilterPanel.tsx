@@ -364,7 +364,7 @@ export function FilterPanel({
       {/* Footer */}
       <div className="border-t border-border px-4 py-2">
         <Button
-          variant="outline"
+          variant="destructive"
           size="sm"
           onClick={queryMode === 'patient' ? onClearAll : onConditionClear}
           className="h-7 w-full text-xs"
