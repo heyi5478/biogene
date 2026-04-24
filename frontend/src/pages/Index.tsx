@@ -244,6 +244,17 @@ const Index = () => {
               {/* Single / selected patient */}
               {displayPatient && (
                 <>
+                  {selectedPatient && results.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedPatient(null)}
+                      className="mb-1 h-7 px-2 text-xs"
+                    >
+                      <ArrowLeft className="mr-1 h-3.5 w-3.5" />
+                      返回病人名單
+                    </Button>
+                  )}
                   <PatientSummary
                     patient={displayPatient}
                     onJumpTo={handleJumpTo}
