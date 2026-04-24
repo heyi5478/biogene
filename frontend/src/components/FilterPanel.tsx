@@ -218,7 +218,7 @@ export function FilterPanel({
                 {selectedModules.length > 0 && (
                   <button
                     onClick={() => onModulesChange([])}
-                    className="text-[10px] text-primary hover:underline"
+                    className="text-[10px] text-destructive hover:underline"
                   >
                     清除全部
                   </button>
