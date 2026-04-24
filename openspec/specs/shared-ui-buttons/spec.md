@@ -76,10 +76,10 @@ The following user-facing buttons SHALL render with the indicated semantic varia
 
 - The「清除全部條件」button in `frontend/src/components/FilterPanel.tsx` (sidebar footer) SHALL use `variant="destructive"`.
 - The「清除全部條件」button in `frontend/src/components/ConditionBuilder.tsx` (condition-builder footer) SHALL use `variant="destructive"`.
-- The「統計」button in `frontend/src/components/PatientSummary.tsx` (right-hand toolbar of the patient summary card) SHALL use `variant="success"`.
-- The「匯出」button in `frontend/src/components/PatientSummary.tsx` (right-hand toolbar, adjacent to 統計) SHALL use `variant="info"`.
+- The「統計」button in `frontend/src/components/PatientActions.tsx` (rendered on the tab row of the patient detail view) SHALL use `variant="success"`.
+- The「匯出」button in `frontend/src/components/PatientActions.tsx` (rendered on the tab row, adjacent to 統計) SHALL use `variant="info"`.
 
-The surrounding jump-link buttons in `PatientSummary.tsx` (門診 / MS/MS / AA / Enzyme / GAG / DNA / 外送) SHALL continue to use `variant="outline"` and MUST NOT be recolored by this change.
+The jump-link buttons in `frontend/src/components/PatientSummary.tsx` (門診 / MS/MS / AA / Enzyme / GAG / DNA / 外送) SHALL continue to use `variant="outline"` and MUST NOT be recolored by this change.
 
 #### Scenario: Clear-all button uses destructive
 - **WHEN** the FilterPanel renders its footer
@@ -90,11 +90,11 @@ The surrounding jump-link buttons in `PatientSummary.tsx` (門診 / MS/MS / AA /
 - **THEN** the「清除全部條件」button MUST be rendered via `<Button variant="destructive">`
 
 #### Scenario: Stats button uses success
-- **WHEN** PatientSummary renders with a selected patient
+- **WHEN** `PatientActions` renders for a selected patient
 - **THEN** the「統計」button MUST be rendered via `<Button variant="success">`
 
 #### Scenario: Export button uses info
-- **WHEN** PatientSummary renders with a selected patient
+- **WHEN** `PatientActions` renders for a selected patient
 - **THEN** the「匯出」button MUST be rendered via `<Button variant="info">`
 
 #### Scenario: Jump links remain outline

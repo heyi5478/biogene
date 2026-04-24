@@ -75,20 +75,30 @@ No other file in `frontend/src/` MAY hard-code a date field name per module.
 - **WHEN** `getRecordDate('opd', { visitDate: '2025-07-01', diagCode: 'X' })` is called
 - **THEN** the result MUST be `'2025-07-01'`
 
-### Requirement: PatientSummary SHALL expose a single-patient statistics entry point
+### Requirement: PatientActions SHALL expose a single-patient statistics entry point
 
-`frontend/src/components/PatientSummary.tsx` MUST render a "統計" button next to the "匯出" button. Clicking it MUST open a `StatsDialog` for the currently displayed patient. The local `calcAge` helper in `PatientSummary.tsx` MUST be removed and replaced with an import of `ageInYears` from `statsUtils`.
+`frontend/src/components/PatientActions.tsx` MUST render a "統計" button that opens a `StatsDialog` for the currently displayed patient. The component MUST accept the patient as a prop and MUST own the open/close state of the dialog locally. The button MUST remain adjacent to the "匯出" button within `PatientActions` so users see both global actions together.
 
-#### Scenario: Stats button renders and triggers the dialog
-- **WHEN** a patient is displayed
-- **THEN** a "統計" button MUST appear in the `PatientSummary` action area
-- **WHEN** the user clicks it
-- **THEN** a `StatsDialog` MUST mount with the same `patient` prop
+The `PatientActions` component MUST be placed on the same row as the `TabsList` in `frontend/src/pages/Index.tsx`, rendered to the right of the tab triggers.
 
-#### Scenario: calcAge duplication is removed
-- **WHEN** the codebase is searched for `calcAge` function declarations
-- **THEN** exactly zero declarations MUST exist in `PatientSummary.tsx`
-- **AND** `ageInYears` from `statsUtils.ts` MUST be used in its place
+`frontend/src/components/PatientSummary.tsx` MUST NOT declare a `calcAge` helper; age calculations used inside the summary MUST continue to use `ageInYears` from `frontend/src/utils/statsUtils.ts`.
+
+#### Scenario: Stats button renders inside PatientActions
+
+- **WHEN** a patient is displayed in the Index page
+- **THEN** a "統計" button MUST be rendered by `PatientActions` on the tab row
+- **AND** `PatientSummary` MUST NOT render a "統計" button
+
+#### Scenario: Clicking the stats button opens the StatsDialog
+
+- **WHEN** the user clicks the "統計" button in `PatientActions`
+- **THEN** a `StatsDialog` MUST mount with the same `patient` prop that was passed to `PatientActions`
+
+#### Scenario: calcAge duplication remains absent from PatientSummary
+
+- **WHEN** the codebase is searched for `calcAge` function declarations in `frontend/src/components/PatientSummary.tsx`
+- **THEN** exactly zero declarations MUST exist
+- **AND** `ageInYears` from `statsUtils.ts` MUST continue to be the age-calculation source used in the summary
 
 ### Requirement: StatsDialog SHALL compute range-bounded descriptive statistics
 
