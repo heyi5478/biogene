@@ -59,7 +59,7 @@ export function SearchSummary({
           variant="ghost"
           size="sm"
           onClick={onClearAll}
-          className="h-5 px-2 text-[10px] text-muted-foreground"
+          className="h-5 px-2 text-[10px] text-destructive hover:text-destructive"
         >
           清除全部
         </Button>
