@@ -43,11 +43,11 @@
 
 ## 5. 提交
 
-- [ ] 5.1 依工作邏輯拆 commit：
+- [x] 5.1 依工作邏輯拆 commit：
   - `docs(e2e): add Planner-generated plan for export and stats`（Section 1）
   - `test(e2e): add patient export spec files (csv/json/xlsx)`（Section 2.1–2.3）
   - `test(e2e): add patient stats dialog spec`（Section 2.4）
   - `test(e2e): add cohort stats tab spec`（Section 2.5）
   - `test(e2e): apply Healer fixes for export and stats specs`（Section 3，如有）
-- [ ] 5.2 推送 branch、開 PR 目標為 `main`，等 CI 全綠
-- [ ] 5.3 Merge 後執行 `/opsx:archive add-export-and-stats-e2e-tests` 歸檔
+- [x] 5.2 推送 branch、開 PR 目標為 `main`，等 CI 全綠
+- [x] 5.3 Merge 後執行 `/opsx:archive add-export-and-stats-e2e-tests` 歸檔
