@@ -55,5 +55,5 @@
 
 ## 7. OpenSpec validation
 
-- [ ] 7.1 Run `openspec validate add-cohort-report-export --strict` and resolve any reported issues.
+- [x] 7.1 Run `openspec validate add-cohort-report-export --strict` and resolve any reported issues.
 - [x] 7.2 Run `openspec status --change add-cohort-report-export` and confirm `isComplete: true`.
