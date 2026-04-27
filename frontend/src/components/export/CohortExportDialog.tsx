@@ -12,35 +12,33 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MODULE_DEFINITIONS, ModuleId, Patient } from '@/types/medical';
-import { ExportFormat, exportPatient } from '@/utils/exporters';
+import { exportPatients } from '@/utils/exporters';
 import { todayStamp } from '@/utils/dateStamp';
 
-interface ExportDialogProps {
+interface CohortExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  patient: Patient;
+  patients: Patient[];
 }
 
 const EXPORTABLE_MODULES: ModuleId[] = MODULE_DEFINITIONS.map(
   (m) => m.id,
 ).filter((id) => id !== 'basic');
 
-function defaultPrefix(patient: Patient): string {
-  const ident =
-    patient.chartno ||
-    patient.externalChartno ||
-    patient.nbsId ||
-    patient.patientId;
-  return `${ident}_${todayStamp()}`;
+function cohortRecordCount(patients: Patient[], moduleId: ModuleId): number {
+  return patients.reduce((total, patient) => {
+    const arr = (patient as unknown as Record<string, unknown>)[moduleId];
+    return total + (Array.isArray(arr) ? arr.length : 0);
+  }, 0);
 }
 
-function defaultSelectedModules(patient: Patient): ModuleId[] {
-  return EXPORTABLE_MODULES.filter((id) => {
-    const arr = (patient as unknown as Record<string, unknown>)[id];
-    return Array.isArray(arr) && arr.length > 0;
-  });
+function defaultSelectedModules(patients: Patient[]): ModuleId[] {
+  return EXPORTABLE_MODULES.filter((id) => cohortRecordCount(patients, id) > 0);
+}
+
+function defaultPrefix(): string {
+  return `cohort_${todayStamp()}`;
 }
 
 function CancelButton({ onCancel }: { onCancel: () => void }) {
@@ -66,21 +64,20 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
   );
 }
 
-export function ExportDialog({
+export function CohortExportDialog({
   open,
   onOpenChange,
-  patient,
-}: ExportDialogProps) {
-  const [format, setFormat] = useState<ExportFormat>('csv');
+  patients,
+}: CohortExportDialogProps) {
   const [selected, setSelected] = useState<Set<ModuleId>>(
-    () => new Set(defaultSelectedModules(patient)),
+    () => new Set(defaultSelectedModules(patients)),
   );
-  const [prefix, setPrefix] = useState(() => defaultPrefix(patient));
+  const [prefix, setPrefix] = useState(() => defaultPrefix());
 
   const [, submitAction] = useActionState(async () => {
     try {
-      await exportPatient(patient, {
-        format,
+      await exportPatients(patients, {
+        format: 'xlsx',
         modules: EXPORTABLE_MODULES.filter((id) => selected.has(id)),
         filenamePrefix: prefix.trim(),
       });
@@ -96,11 +93,18 @@ export function ExportDialog({
 
   useEffect(() => {
     if (open) {
-      setSelected(new Set(defaultSelectedModules(patient)));
-      setPrefix(defaultPrefix(patient));
-      setFormat('csv');
+      setSelected(new Set(defaultSelectedModules(patients)));
+      setPrefix(defaultPrefix());
     }
-  }, [open, patient]);
+  }, [open, patients]);
+
+  const counts = useMemo(() => {
+    const map = new Map<ModuleId, number>();
+    EXPORTABLE_MODULES.forEach((id) => {
+      map.set(id, cohortRecordCount(patients, id));
+    });
+    return map;
+  }, [patients]);
 
   const allChecked = useMemo(
     () => EXPORTABLE_MODULES.every((id) => selected.has(id)),
@@ -131,40 +135,10 @@ export function ExportDialog({
       <DialogContent className="max-w-xl">
         <form action={submitAction}>
           <DialogHeader>
-            <DialogTitle>匯出 — {patient.name}</DialogTitle>
+            <DialogTitle>匯出比較報告 — {patients.length} 位病人</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div>
-              <Label className="mb-2 block text-xs font-medium text-muted-foreground">
-                格式
-              </Label>
-              <RadioGroup
-                value={format}
-                onValueChange={(v) => setFormat(v as ExportFormat)}
-                className="flex gap-4"
-              >
-                <div className="flex items-center gap-2 text-sm">
-                  <RadioGroupItem id="export-format-csv" value="csv" />
-                  <Label htmlFor="export-format-csv" className="text-sm">
-                    CSV (zip)
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <RadioGroupItem id="export-format-json" value="json" />
-                  <Label htmlFor="export-format-json" className="text-sm">
-                    JSON
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <RadioGroupItem id="export-format-xlsx" value="xlsx" />
-                  <Label htmlFor="export-format-xlsx" className="text-sm">
-                    XLSX
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <Label className="text-xs font-medium text-muted-foreground">
@@ -183,11 +157,8 @@ export function ExportDialog({
               <div className="grid max-h-60 grid-cols-2 gap-1 overflow-y-auto rounded-md border border-border p-2">
                 {EXPORTABLE_MODULES.map((id) => {
                   const def = MODULE_DEFINITIONS.find((m) => m.id === id);
-                  const arr = (patient as unknown as Record<string, unknown>)[
-                    id
-                  ];
-                  const count = Array.isArray(arr) ? arr.length : 0;
-                  const checkboxId = `export-module-${id}`;
+                  const count = counts.get(id) ?? 0;
+                  const checkboxId = `cohort-export-module-${id}`;
                   return (
                     <div
                       key={id}
@@ -213,13 +184,13 @@ export function ExportDialog({
 
             <div>
               <Label
-                htmlFor="export-filename"
+                htmlFor="cohort-export-filename"
                 className="mb-1 block text-xs font-medium text-muted-foreground"
               >
                 檔名前綴
               </Label>
               <Input
-                id="export-filename"
+                id="cohort-export-filename"
                 value={prefix}
                 onChange={(e) => setPrefix(e.target.value)}
               />

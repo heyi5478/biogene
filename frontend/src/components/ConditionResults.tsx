@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowLeft, Eye } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Download, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -19,6 +19,7 @@ import {
   MODULE_FIELDS,
 } from '@/types/medical';
 import { CohortStatsPanel } from '@/components/stats/CohortStatsPanel';
+import { CohortExportDialog } from '@/components/export/CohortExportDialog';
 
 interface MatchedPatient {
   patient: Patient;
@@ -42,6 +43,8 @@ export function ConditionResults({
   onSelectPatient,
   onBackToList,
 }: ConditionResultsProps) {
+  const [exportOpen, setExportOpen] = useState(false);
+
   if (selectedPatient) return null; // handled by parent
 
   const conditionChips = conditions
@@ -72,6 +75,16 @@ export function ConditionResults({
             {chip}
           </Badge>
         ))}
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto h-6 px-2 text-[10px]"
+          disabled={matchedPatients.length === 0}
+          onClick={() => setExportOpen(true)}
+        >
+          <Download className="mr-1 h-3 w-3" />
+          匯出比較報告
+        </Button>
       </div>
 
       {matchedPatients.length === 0 ? (
@@ -149,16 +162,23 @@ export function ConditionResults({
   );
 
   return (
-    <Tabs defaultValue="list" className="space-y-2">
-      <TabsList>
-        <TabsTrigger value="list">名單</TabsTrigger>
-        <TabsTrigger value="cohort">族群統計</TabsTrigger>
-      </TabsList>
-      <TabsContent value="list">{listContent}</TabsContent>
-      <TabsContent value="cohort">
-        <CohortStatsPanel patients={matchedPatients.map((m) => m.patient)} />
-      </TabsContent>
-    </Tabs>
+    <>
+      <Tabs defaultValue="list" className="space-y-2">
+        <TabsList>
+          <TabsTrigger value="list">名單</TabsTrigger>
+          <TabsTrigger value="cohort">族群統計</TabsTrigger>
+        </TabsList>
+        <TabsContent value="list">{listContent}</TabsContent>
+        <TabsContent value="cohort">
+          <CohortStatsPanel patients={matchedPatients.map((m) => m.patient)} />
+        </TabsContent>
+      </Tabs>
+      <CohortExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        patients={matchedPatients.map((m) => m.patient)}
+      />
+    </>
   );
 }
 
