@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MODULE_DEFINITIONS, ModuleId, Patient } from '@/types/medical';
 import { ExportFormat, exportPatient } from '@/utils/exporters';
+import { todayStamp } from '@/utils/dateStamp';
 
 interface ExportDialogProps {
   open: boolean;
@@ -25,14 +26,6 @@ interface ExportDialogProps {
 const EXPORTABLE_MODULES: ModuleId[] = MODULE_DEFINITIONS.map(
   (m) => m.id,
 ).filter((id) => id !== 'basic');
-
-function todayStamp(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}${m}${day}`;
-}
 
 function defaultPrefix(patient: Patient): string {
   const ident =
