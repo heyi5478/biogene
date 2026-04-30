@@ -117,18 +117,33 @@ def _filter_and_coerce(model, row: dict) -> dict:
     return out
 
 
-def _seed_table(session, schema: str, table: str, rows: list[dict]) -> int:
+def _truncate_schema(session, schema: str, tables: list[str]) -> None:
+    """Wipe every table in a schema in one ``TRUNCATE ... CASCADE``.
+
+    Per-table ``DELETE`` would hit FK violations on rerun (sample rows
+    reference patient_id; deleting patient first errors). ``TRUNCATE
+    CASCADE`` avoids the ordering problem and ``RESTART IDENTITY`` keeps
+    sample IDs deterministic across reruns.
+    """
+    from sqlalchemy import text
+    qualified = ", ".join(f"{schema}.{t}" for t in tables)
+    session.execute(
+        text(f"TRUNCATE TABLE {qualified} RESTART IDENTITY CASCADE")
+    )
+
+
+def _insert_table(session, schema: str, table: str, rows: list[dict]) -> int:
     if not rows:
         return 0
     model = _model_for(schema, table)
-    # Wipe the table first; rerunning is idempotent because we re-insert
-    # the same rows, and patient_id is the natural key. Sample tables use
-    # IDENTITY for id so re-inserting would add duplicates without this.
-    session.execute(model.__table__.delete())
-    session.flush()
     for row in rows:
         clean = _filter_and_coerce(model, row)
         session.add(model(**clean))
+    # Flush per-table so the next table's INSERT sees parent rows already
+    # committed-to-the-transaction. SQLAlchemy's unit-of-work topo sort
+    # only follows ORM ``relationship`` edges, which we don't declare —
+    # without this flush, sample INSERTs can race ahead of patient INSERTs.
+    session.flush()
     return len(rows)
 
 
@@ -137,10 +152,9 @@ def _seed_links(session, all_data: dict[str, list[dict]]) -> int:
 
     Walks every patient row across the three databases and emits one
     junction row per ordered pair (smaller UUID first, satisfying the
-    ``patient_id_a < patient_id_b`` CHECK).
+    ``patient_id_a < patient_id_b`` CHECK). ``patient_link`` is wiped
+    by the caller via the ``links`` schema TRUNCATE.
     """
-    session.execute(PatientLink.__table__.delete())
-    session.flush()
 
     seen: set[tuple[str, str]] = set()
     n = 0
@@ -167,18 +181,23 @@ def main() -> int:
     session = get_sync_session()
     try:
         total = 0
-        # Load every patient.json so we can later wire up links.
-        patient_rows: dict[str, list[dict]] = {}
 
-        # Iterate sample tables in reverse FK-dependency order for delete,
-        # then forward order for insert. We just commit at the end.
+        # Phase 1 — wipe every schema in one TRUNCATE CASCADE per schema.
+        # links.patient_link gets cleared explicitly because no FK forces it.
+        for db_dir, schema, tables in LOAD_ORDER:
+            _truncate_schema(session, schema, tables)
+        _truncate_schema(session, "links", ["patient_link"])
+
+        # Phase 2 — insert in FK-safe forward order, capturing patient rows
+        # for the link wiring step.
+        patient_rows: dict[str, list[dict]] = {}
         for db_dir, schema, tables in LOAD_ORDER:
             print(f"seeding {schema} (from {db_dir}/):")
             for tbl in tables:
                 rows = _load_json(db_dir, tbl)
                 if tbl == "patient":
                     patient_rows[db_dir] = rows
-                n = _seed_table(session, schema, tbl, rows)
+                n = _insert_table(session, schema, tbl, rows)
                 print(f"  {tbl:14}  {n:4} rows")
                 total += n
 
