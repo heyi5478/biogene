@@ -18,6 +18,7 @@ build/
 
 # Claude Code local tooling
 .claude/worktrees/
+.claude/plans/
 
 # Python (backend/)
 .venv/
