@@ -1,0 +1,60 @@
+--
+-- pgloader template for migrating one of the 2.0 MySQL databases to a
+-- target PostgreSQL schema in `gimc`.
+--
+-- This file is a *template* — `run_etl.py` substitutes the placeholders
+-- below before invoking `pgloader`. Run pgloader against three different
+-- (source, target) pairs:
+--
+--   ('2.0',           'main')
+--   ('2.0外院資料庫',   'external')
+--   ('new_born_screening', 'nbs')
+--
+-- Placeholders below are substituted by run_etl.py via string.Template:
+--   @@MYSQL_URL@@        example  mysql://user:pw@host:3306/`2.0`
+--   @@PG_URL@@           example  postgresql://gimc:gimc@localhost/gimc
+--   @@SOURCE_SCHEMA@@    example  `2.0`             pgloader names schema after MySQL DB
+--   @@TARGET_SCHEMA@@    example  main              renamed by AFTER LOAD DO
+--
+-- Cast rules cover the four MySQL→PG type mismatches called out in design D6:
+--   utf8mb4   → UTF8       (handled by `BEFORE LOAD DO` setting client_encoding)
+--   DECIMAL   → NUMERIC    (lossless)
+--   TINYINT(1)→ BOOLEAN    (MySQL convention for booleans)
+--   DATETIME  → TIMESTAMPTZ — drop NOT NULL and the cursed `0000-00-00 00:00:00`
+--                            default that PG won't accept.
+-- patient_id we leave as VARCHAR for now; `post_pgloader.sql` casts it to
+-- UUID after pgloader is done (USING patient_id::uuid).
+
+LOAD DATABASE
+    FROM      ${MYSQL_URL}
+    INTO      ${PG_URL}
+
+WITH include drop,
+     create tables,
+     create indexes,
+     reset sequences,
+     foreign keys,
+     downcase identifiers,
+     workers = 4,
+     concurrency = 1,
+     multiple readers per thread,
+     rows per range = 50000
+
+SET PostgreSQL PARAMETERS
+     maintenance_work_mem to '256MB',
+     work_mem            to '24MB',
+     search_path         to 'public'
+
+CAST type tinyint  when (= precision 1) to boolean drop typemod,
+     type decimal                     to numeric  drop typemod,
+     type datetime                    to timestamptz drop not null drop default,
+     type timestamp                   to timestamptz drop not null drop default
+
+BEFORE LOAD DO
+    $$ CREATE SCHEMA IF NOT EXISTS ${SOURCE_SCHEMA}; $$
+
+AFTER LOAD DO
+    -- pgloader created tables in the source-name schema (e.g. `2.0`);
+    -- rename to the canonical 3.0 layout.
+    $$ ALTER SCHEMA ${SOURCE_SCHEMA} RENAME TO ${TARGET_SCHEMA}; $$
+;

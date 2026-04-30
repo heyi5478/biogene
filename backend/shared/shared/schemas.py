@@ -168,6 +168,31 @@ class GagRecord(_Base):
     result: str
     DMGGAG: float | None = None
     CREATININE: float | None = None
+    # Widened by the 1.0 ETL (§8.4 of postgres-data-backend) to absorb
+    # the full MPSUDATA panel from the legacy Access database. Existing
+    # 2.0 rows leave these null; 1.0 rows populate them on import.
+    od: float | None = None
+    urineCreatinine: float | None = None
+    mggag: float | None = None
+    twos: float | None = None
+    twosCre: float | None = None
+
+
+class GcmsRecord(_Base):
+    """Gas chromatography / mass spectrometry record (legacy GCDATA).
+
+    Introduced by the 1.0 ETL — there is no 2.0 equivalent. The raw
+    spectrum image (GCDATA.pic) is written to the filesystem under
+    ``/srv/gimc/blobs/gcms/<sampleno>.jpg``; ``rawDataPath`` stores the
+    relative path.
+    """
+    patientId: str
+    sampleName: str
+    specimenType: str | None = None
+    result: str | None = None
+    rawDataPath: str | None = None
+    collectDate: str | None = None
+    notes: str | None = None
 
 
 class BdRecord(_Base):
@@ -243,6 +268,7 @@ class LabBundle(_Base):
     biomarker: list[BiomarkerRecord] = []
     outbank: list[OutbankRecord] = []
     dnabank: list[DnabankRecord] = []
+    gcms: list[GcmsRecord] = []
 
 
 class DiseaseBundle(_Base):
@@ -275,6 +301,7 @@ class PatientBundle(Patient):
     biomarker: list[BiomarkerRecord] = []
     outbank: list[OutbankRecord] = []
     dnabank: list[DnabankRecord] = []
+    gcms: list[GcmsRecord] = []
     aadc: list[AadcRecord] = []
     ald: list[AldRecord] = []
     mma: list[MmaRecord] = []
@@ -305,6 +332,7 @@ __all__ = [
     "LsdRecord",
     "EnzymeRecord",
     "GagRecord",
+    "GcmsRecord",
     "BdRecord",
     "CahRecord",
     "TgalSubRecord",
