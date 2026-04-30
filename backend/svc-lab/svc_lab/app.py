@@ -20,11 +20,12 @@ from shared.logging import (
     install_exception_handlers,
     install_middleware,
 )
-from shared.schemas import LabBundle
+from shared.schemas import GcmsRecord, LabBundle
 
 log = configure_logging("svc-lab")
 
-_LAB_TABLES = ("aa", "msms", "biomarker", "outbank", "dnabank")
+# gcms only exists in main (introduced by 1.0 ETL — no 2.0 equivalent).
+_LAB_TABLES = ("aa", "msms", "biomarker", "outbank", "dnabank", "gcms")
 _DB_DIRS = ("db_main", "db_external", "db_nbs")
 
 # table -> patientId -> list[row]
@@ -78,6 +79,16 @@ def healthz() -> dict:
 @app.get("/labs/{patient_id}", response_model=LabBundle)
 def get_labs(patient_id: str) -> dict:
     return _bundle_for(patient_id)
+
+
+@app.get("/labs/{patient_id}/gcms", response_model=list[GcmsRecord])
+def get_gcms(patient_id: str) -> list[dict]:
+    """Per-patient GC-MS records — empty list if none.
+
+    Added by §13.1 of postgres-data-backend; populated by the 1.0 ETL
+    (GCDATA → main.gcms). 2.0 had no GC-MS equivalent.
+    """
+    return list(_index["gcms"].get(patient_id, []))
 
 
 class _BatchRequest(BaseModel):
