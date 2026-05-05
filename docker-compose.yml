@@ -1,0 +1,166 @@
+# Reproduces the my-project topology end-to-end for stage / smoke testing.
+#
+#   db (postgres:16) ─┐
+#                     ├── migrate   one-shot: alembic upgrade head
+#                     ├── svc-patient  :8001
+#                     ├── svc-lab      :8002
+#                     ├── svc-disease  :8003
+#                     └── gateway      :8000  (only backend port published)
+#                                 └── frontend :8080  (nginx serves the SPA)
+#
+# Bring everything up:
+#     docker compose up -d --build
+#
+# Tail logs:
+#     docker compose logs -f gateway
+#
+# Seed the gimc db from backend/mock-data/ (one-shot, dev-only):
+#     docker compose --profile seed run --rm seed
+#
+# Override the public-facing URLs by setting these in the shell or in a
+# `.env` file alongside this compose file:
+#     PUBLIC_API_URL — what the browser uses to call the gateway
+#     PUBLIC_WEB_URL — gateway's CORS allow-origin (= frontend's public URL)
+
+name: my-project
+
+x-backend: &backend
+  image: my-project-backend:latest
+  build:
+    context: ./backend
+  restart: unless-stopped
+  networks: [internal]
+
+x-backend-env: &backend-env
+  DATABASE_URL: postgresql+asyncpg://gimc:gimc@db:5432/gimc
+  GIMC_DATA_BACKEND: postgres
+
+x-svc-healthcheck: &svc-healthcheck
+  interval: 10s
+  timeout: 3s
+  retries: 5
+  start_period: 15s
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gimc
+      POSTGRES_PASSWORD: gimc
+      POSTGRES_DB: gimc
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./compose/init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gimc -d gimc"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Exposed so DBeaver on the dev host can connect. Drop this `ports`
+    # block in prod — backend services reach the DB via the internal
+    # network either way.
+    ports:
+      - "5432:5432"
+    networks: [internal]
+
+  migrate:
+    <<: *backend
+    restart: "no"
+    environment:
+      <<: *backend-env
+      SERVICE: migrate
+    depends_on:
+      db:
+        condition: service_healthy
+
+  svc-patient:
+    <<: *backend
+    environment:
+      <<: *backend-env
+      SERVICE: svc-patient
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      <<: *svc-healthcheck
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/healthz')"]
+
+  svc-lab:
+    <<: *backend
+    environment:
+      <<: *backend-env
+      SERVICE: svc-lab
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      <<: *svc-healthcheck
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/healthz')"]
+
+  svc-disease:
+    <<: *backend
+    environment:
+      <<: *backend-env
+      SERVICE: svc-disease
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      <<: *svc-healthcheck
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/healthz')"]
+
+  gateway:
+    <<: *backend
+    environment:
+      <<: *backend-env
+      SERVICE: gateway
+      SVC_PATIENT_URL: http://svc-patient:8001
+      SVC_LAB_URL: http://svc-lab:8002
+      SVC_DISEASE_URL: http://svc-disease:8003
+      GATEWAY_CORS_ORIGIN: ${PUBLIC_WEB_URL:-http://localhost:8080}
+    depends_on:
+      svc-patient: { condition: service_healthy }
+      svc-lab:     { condition: service_healthy }
+      svc-disease: { condition: service_healthy }
+    ports:
+      - "${GATEWAY_HOST_PORT:-8000}:8000"
+    healthcheck:
+      <<: *svc-healthcheck
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+
+  frontend:
+    image: my-project-frontend:latest
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+    depends_on:
+      gateway:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_HOST_PORT:-8080}:80"
+    networks: [internal]
+
+  seed:
+    <<: *backend
+    profiles: ["seed"]
+    restart: "no"
+    environment:
+      <<: *backend-env
+      SERVICE: seed
+    volumes:
+      # mock-data isn't baked into the image (dev fixture only); mount
+      # it from the host so seed_from_json.py can find it at /app/mock-data.
+      - ./backend/mock-data:/app/mock-data:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pg-data:
+
+networks:
+  internal:
+    driver: bridge

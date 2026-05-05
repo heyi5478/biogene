@@ -25,6 +25,9 @@ Browser (Vite dev server, :8080)
 ```
 my-project/
 ├── frontend/           # Vite + React 19 + TypeScript + Tailwind + shadcn/ui
+│   ├── Dockerfile      # Bun build → nginx runtime (multi-stage)
+│   ├── nginx.conf      # SPA fallback + cache rules + /healthz
+│   └── docker-entrypoint.sh   # injects VITE_API_BASE_URL at container start
 ├── backend/
 │   ├── gateway/        # Frontend-facing entry point (:8000)
 │   ├── svc-patient/    # Patient base records (:8001)
@@ -32,7 +35,11 @@ my-project/
 │   ├── svc-disease/    # Disease-project modules (:8003)
 │   ├── shared/         # Shared Pydantic schemas / data_loader
 │   ├── mock-data/      # Dev-time seed JSON
-│   └── scripts/        # dev.sh, load_mock.py
+│   ├── scripts/        # dev.sh, load_mock.py, docker-entrypoint.sh, seed_from_json.py
+│   └── Dockerfile      # One image; SERVICE env var selects which app runs
+├── compose/
+│   └── init-db/        # PG bootstrap SQL run on first `db` container start
+├── docker-compose.yml  # Full-stack orchestration (db, migrate, 4 services, frontend)
 ├── openspec/           # Change proposals and specs (OpenSpec workflow)
 ├── PLAN.md             # Initial architecture and implementation plan
 └── genetic_medicine_search_page_spec_v2_with_mermaid.md  # Feature spec
@@ -82,6 +89,51 @@ export GATEWAY_CORS_ORIGIN=http://localhost:8080
 bash backend/scripts/dev.sh
 ```
 
+## Containerised Deploy (Docker Compose)
+
+A `docker-compose.yml` at the repo root brings up the full stack — PostgreSQL, alembic migration, the four FastAPI services, and the nginx-served SPA — in one command. Use it for stage smoke tests, or as a reference for prod (where `db` is typically swapped for managed PostgreSQL).
+
+### Bring it up
+
+```bash
+docker compose up -d --build                      # build images + start everything
+docker compose ps                                 # confirm every service is healthy
+docker compose --profile seed run --rm seed       # one-shot: load mock-data into PG
+open http://localhost:8080                        # SPA → gateway → services → PG
+```
+
+### Topology
+
+| Service       | Host port  | Role                                                                |
+|---------------|------------|---------------------------------------------------------------------|
+| `db`          | 5432       | `postgres:16` (open to host so DBeaver can connect; drop in prod)   |
+| `migrate`     | —          | one-shot `alembic upgrade head`                                     |
+| `svc-patient` / `svc-lab` / `svc-disease` | — | internal services (no host port)                          |
+| `gateway`     | 8000       | only backend port published                                         |
+| `frontend`    | 8080 → 80  | nginx serves the Vite bundle                                        |
+| `seed`        | —          | `--profile seed` only; mounts `backend/mock-data/`                  |
+
+The backend is **one image**; the `SERVICE` env var picks the entrypoint (`gateway`, `svc-patient`, `svc-lab`, `svc-disease`, `migrate`, `seed`, or `shell`).
+
+### Stage / prod URL overrides
+
+The gateway's CORS allow-origin and the SPA's API base URL are env-driven. Drop a `.env` at the repo root:
+
+```bash
+PUBLIC_API_URL=https://api.stage.example.com
+PUBLIC_WEB_URL=https://app.stage.example.com
+```
+
+The frontend image bakes a build-time sentinel; its container entrypoint sed-replaces it with the runtime `VITE_API_BASE_URL` before nginx starts — so the same image runs unchanged across environments.
+
+### Going prod-flavoured
+
+In real prod you usually want managed PostgreSQL (RDS, Cloud SQL, ...):
+
+1. Remove the `db` service (or override via `compose.override.yaml`); the `pg-data` volume and `compose/init-db` mount go with it.
+2. Apply `compose/init-db/01-schemas.sql` to the managed DB once, by hand.
+3. Point every backend service's `DATABASE_URL` at the external host. Pass the password via Docker secrets or orchestrator-managed env, not `.env`.
+
 ## Smoke Tests
 
 ```bash
@@ -128,6 +180,7 @@ Backend: see `backend/README.md`. Individual services can be run with `uvicorn <
 - [`genetic_medicine_search_page_spec_v2_with_mermaid.md`](genetic_medicine_search_page_spec_v2_with_mermaid.md) — query-page feature spec (with mermaid diagrams)
 - [`backend/README.md`](backend/README.md) — microservice endpoints, CORS, error-code details
 - [`frontend/README.md`](frontend/README.md) — frontend env setup and common troubleshooting
+- [`docker-compose.yml`](docker-compose.yml) — full-stack stage / smoke-test orchestration
 - [`openspec/`](openspec/) — change proposals and specs (OpenSpec workflow)
 
 ## License
@@ -163,6 +216,9 @@ Browser (Vite dev server, :8080)
 ```
 my-project/
 ├── frontend/           # Vite + React 19 + TypeScript + Tailwind + shadcn/ui
+│   ├── Dockerfile      # Bun 建置 → nginx 服務（multi-stage）
+│   ├── nginx.conf      # SPA fallback + 快取策略 + /healthz
+│   └── docker-entrypoint.sh   # 啟動時注入 VITE_API_BASE_URL
 ├── backend/
 │   ├── gateway/        # 前端唯一入口（:8000）
 │   ├── svc-patient/    # 病人基本資料（:8001）
@@ -170,7 +226,11 @@ my-project/
 │   ├── svc-disease/    # 疾病專案（:8003）
 │   ├── shared/         # 共用 Pydantic schemas / data_loader
 │   ├── mock-data/      # 開發用 JSON 種子資料
-│   └── scripts/        # dev.sh、load_mock.py
+│   ├── scripts/        # dev.sh、load_mock.py、docker-entrypoint.sh、seed_from_json.py
+│   └── Dockerfile      # 一個 image；用 SERVICE 環境變數決定跑哪個入口
+├── compose/
+│   └── init-db/        # PG 第一次啟動時跑的 bootstrap SQL
+├── docker-compose.yml  # 全堆疊 orchestration（db、migrate、四個服務、前端）
 ├── openspec/           # 變更提案與規格（OpenSpec 工作流程）
 ├── PLAN.md             # 初始架構與實作計畫
 └── genetic_medicine_search_page_spec_v2_with_mermaid.md  # 功能規格
@@ -220,6 +280,51 @@ export GATEWAY_CORS_ORIGIN=http://localhost:8080
 bash backend/scripts/dev.sh
 ```
 
+## 容器化部署 (Docker Compose)
+
+repo 根目錄的 `docker-compose.yml` 一鍵起整個 stack — PostgreSQL、alembic migration、四個 FastAPI 服務、nginx 服務的 SPA。Stage 煙霧測試適用，也可當 prod 部署的參考（prod 通常把 `db` 換成 managed PostgreSQL）。
+
+### 啟動
+
+```bash
+docker compose up -d --build                      # build images + 全部啟動
+docker compose ps                                 # 確認每個服務都 healthy
+docker compose --profile seed run --rm seed       # 一次性灌 mock-data 進 PG
+open http://localhost:8080                        # SPA → gateway → services → PG
+```
+
+### 服務拓撲
+
+| 服務          | 對外 port  | 角色                                                                |
+|---------------|------------|---------------------------------------------------------------------|
+| `db`          | 5432       | `postgres:16`（給 DBeaver 連的；prod 要關掉這個 `ports`）            |
+| `migrate`     | —          | 一次性跑 `alembic upgrade head`                                     |
+| `svc-patient` / `svc-lab` / `svc-disease` | — | 內部服務（不對外）                                       |
+| `gateway`     | 8000       | 唯一對外的後端 port                                                 |
+| `frontend`    | 8080 → 80  | nginx 服務 Vite bundle                                              |
+| `seed`        | —          | 只有 `--profile seed` 才啟動；會掛 `backend/mock-data/`             |
+
+後端是 **一個 image**；由 `SERVICE` 環境變數決定入口（`gateway`、`svc-patient`、`svc-lab`、`svc-disease`、`migrate`、`seed`、`shell`）。
+
+### Stage / prod 環境覆寫網址
+
+Gateway 的 CORS allow-origin 跟 SPA 的 API base URL 都是環境變數驅動。在 repo 根目錄放一份 `.env`：
+
+```bash
+PUBLIC_API_URL=https://api.stage.example.com
+PUBLIC_WEB_URL=https://app.stage.example.com
+```
+
+Frontend image 在 build 時打進一個 sentinel 字串，container entrypoint 啟動 nginx 前用 sed 替換成 runtime 的 `VITE_API_BASE_URL` —— 同一個 image 可在 stage / prod 跨環境跑。
+
+### 改成 prod 風格
+
+實務 prod 通常用 managed PostgreSQL（RDS、Cloud SQL …）：
+
+1. 移除 `db` service（或用 `compose.override.yaml` 覆寫），連同 `pg-data` volume 跟 `compose/init-db` mount 一起拿掉。
+2. 對 managed DB 手動跑一次 `compose/init-db/01-schemas.sql`。
+3. 把所有後端 service 的 `DATABASE_URL` 指向外部主機。密碼透過 Docker secrets 或 orchestrator 管理，不要走 `.env`。
+
 ## 煙霧測試
 
 ```bash
@@ -266,6 +371,7 @@ python3 backend/scripts/load_mock.py
 - [`genetic_medicine_search_page_spec_v2_with_mermaid.md`](genetic_medicine_search_page_spec_v2_with_mermaid.md) — 查詢頁面功能規格（含 mermaid 圖）
 - [`backend/README.md`](backend/README.md) — 微服務 API 端點、CORS、錯誤碼細節
 - [`frontend/README.md`](frontend/README.md) — 前端 env 設定與常見錯誤排查
+- [`docker-compose.yml`](docker-compose.yml) — 全堆疊 stage / 煙霧測試 orchestration
 - [`openspec/`](openspec/) — 變更提案與 specs（OpenSpec 工作流程）
 
 ## 授權

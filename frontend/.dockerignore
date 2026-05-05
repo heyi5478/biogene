@@ -1,0 +1,43 @@
+# Build context is `frontend/`. Skip everything that bun install / vite
+# build don't need so the layer cache stays useful.
+
+# Bun / npm artefacts
+node_modules
+.npm
+.bun
+
+# Build output (regenerated inside the image)
+dist
+build
+.vite
+*.tsbuildinfo
+
+# Secrets — Vite reads .env at build, but we override VITE_API_BASE_URL
+# via ENV in the Dockerfile, so the .env files must NOT leak into the image
+.env
+.env.*
+!.env.example
+
+# Tests / reports — never shipped
+tests
+playwright-report
+test-results
+playwright.config.ts
+vitest.config.ts
+tsconfig.test.json
+
+# Editor / OS / VCS noise
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+*.swp
+
+# Docs we don't bake into the image
+README.md
+specs
+
+# Lockfile we don't use (Bun is the source of truth)
+package-lock.json
+bun.lockb
