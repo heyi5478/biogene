@@ -2,7 +2,9 @@
 
 Four FastAPI processes back the frontend. The gateway on port 8000 is the
 only service the browser talks to; it fans out to three internal services
-loaded with the JSON mock data under `backend/mock-data/`.
+that read either the JSON fixtures under `backend/mock-data/` (dev default)
+or the alembic-managed `gimc` PostgreSQL database. The `GIMC_DATA_BACKEND`
+env var picks which — see `.env.example`.
 
 | Service       | Port | Role                                                   | Python package |
 | ------------- | ---- | ------------------------------------------------------ | -------------- |
@@ -27,8 +29,27 @@ pip install -e backend/svc-disease
 ```
 
 Each service has its own `pyproject.toml` and depends on `shared` as a
-sibling editable install — the shared package contains `schemas.py` and the
-`data_loader` thin wrapper over `backend/scripts/load_mock.py`.
+sibling editable install. The `shared` package holds the Pydantic response
+schemas (`schemas.py`), the SQLAlchemy 2.0 declarative models (`models/`),
+the async + sync engine helpers (`db.py`), and the dual-backend `data_loader`
+facade (JSON via `scripts/load_mock.py` or PG via `shared.db`).
+
+## Makefile targets
+
+`backend/Makefile` is the canonical entry point for dev workflows. Run from
+repo root with `make -C backend <target>`, or `cd backend/` first:
+
+| Target | Purpose |
+| --- | --- |
+| `install` | `pip install -e` all five packages into the active venv |
+| `alembic-up` | `alembic upgrade head` — apply pending migrations |
+| `alembic-check` | Diff `metadata` against the live DB; non-zero on drift |
+| `seed-pg` | Load `mock-data/` into PG via `scripts/seed_from_json.py` |
+| `verify-pg` | Run `etl/verify.py`'s 7-check parity suite against `gimc` |
+
+`alembic-up` / `seed-pg` / `verify-pg` require `DATABASE_URL` to point at a
+reachable PostgreSQL instance. `setup-postgres.sh` provisions one locally;
+`docker-compose.yml` provisions one in a container.
 
 ## Running
 
@@ -47,9 +68,11 @@ uvicorn svc_lab.app:app     --host 127.0.0.1 --port 8002 --reload
 uvicorn svc_disease.app:app --host 127.0.0.1 --port 8003 --reload
 ```
 
-At startup every service calls `shared.data_loader.validate()` which walks
-the mock-data JSON files and checks FK integrity. On failure the service
-logs the offending row and exits non-zero before binding its port.
+At startup every service calls `shared.data_loader.validate()` to check FK
+integrity — for the JSON backend this is an in-memory sweep over the
+mock-data dicts; for the PG backend it's a per-sample-table
+`LEFT JOIN … IS NULL` query. On the first violation the service logs the
+offending row and exits non-zero before binding its port.
 
 ## Endpoints — frontend view (gateway only)
 

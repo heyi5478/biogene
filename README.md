@@ -1,24 +1,29 @@
 # Genetic Medicine Integrated Query Center
 
-Internal medical information system that lets geneticists search patient data across 14 data modules (basic info, OPD, AA, MS/MS, Biomarker, LSD, Enzyme, GAG, DNAbank, Outbank, AADC, ALD, MMA, MPS2) using two query modes: **patient query** and **condition query**. The frontend is a Vite + React SPA; the backend is a FastAPI microservice architecture that aggregates results from three internal services behind a single gateway.
+Internal medical information system that lets geneticists search patient data across 14 data modules (basic info, OPD, AA, MS/MS, Biomarker, LSD, Enzyme, GAG, DNAbank, Outbank, AADC, ALD, MMA, MPS2) using two query modes: **patient query** and **condition query**. The frontend is a Vite + React SPA; the backend is a FastAPI microservice architecture that aggregates results from three internal services behind a single gateway, reading either JSON fixtures (default for dev) or an alembic-managed PostgreSQL `gimc` database.
 
 ## Architecture
 
 ```
-Browser (Vite dev server, :8080)
-        │
-        ▼
+Browser
+   │
+   ▼
+┌──────────────────────────┐
+│  frontend (Vite SPA)     │  dev: vite :8080  │  prod: nginx in container
+└─────────────┬────────────┘
+              │
+              ▼
 ┌──────────────────┐      ┌───────────────┐
-│ gateway  :8000   │──────▶ svc-patient   │  :8001
-│  (BFF / CORS /   │──────▶ svc-lab       │  :8002
-│   aggregation)   │──────▶ svc-disease   │  :8003
+│ gateway  :8000   │──────▶ svc-patient   │  :8001 ─┐
+│  (BFF / CORS /   │──────▶ svc-lab       │  :8002 ─┼──▶  PostgreSQL :5432
+│   aggregation)   │──────▶ svc-disease   │  :8003 ─┘     (gimc / 5 schemas)
 └──────────────────┘      └───────────────┘
 ```
 
-- The browser only talks to `gateway`; `gateway` fans out to the three internal services via `httpx.AsyncClient`.
+- The frontend SPA only calls `gateway`; `gateway` fans out to the three internal services via `httpx.AsyncClient`.
 - Internal services never call each other — all aggregation happens in `gateway`.
 - Internal services have no CORS middleware, so direct browser calls are blocked by design.
-- In the development environment, JSON files under `backend/mock-data/` are the data source. At startup, `shared.data_loader.validate()` walks the mock data and checks FK integrity; on failure the service logs the offending row and exits non-zero before binding its port.
+- The data source is chosen by `GIMC_DATA_BACKEND`: `json` (default, reads `backend/mock-data/`) or `postgres` (reads the alembic-managed `gimc` database — schemas `main` / `external` / `nbs` / `links` / `ref`). Both modes return identical row shapes, so service code is unchanged across the two. At startup `shared.data_loader.validate()` checks FK integrity and exits non-zero on the first violation before the service binds its port.
 
 ## Project Layout
 
@@ -33,9 +38,12 @@ my-project/
 │   ├── svc-patient/    # Patient base records (:8001)
 │   ├── svc-lab/        # Lab results + specimens (:8002)
 │   ├── svc-disease/    # Disease-project modules (:8003)
-│   ├── shared/         # Shared Pydantic schemas / data_loader
-│   ├── mock-data/      # Dev-time seed JSON
-│   ├── scripts/        # dev.sh, load_mock.py, docker-entrypoint.sh, seed_from_json.py
+│   ├── shared/         # Pydantic schemas + SQLAlchemy models + dual-backend data_loader
+│   ├── alembic/        # Migration scripts (alembic.ini lives at backend/ root)
+│   ├── etl/            # One-shot 1.0 / 2.0 → PG ETL (retired post-cutover)
+│   ├── mock-data/      # Fixture JSON; data source for `json` mode AND `make seed-pg`
+│   ├── scripts/        # dev.sh, setup-postgres.sh, load_mock.py, seed_from_json.py, docker-entrypoint.sh
+│   ├── Makefile        # install / alembic-up / alembic-check / seed-pg / verify-pg
 │   └── Dockerfile      # One image; SERVICE env var selects which app runs
 ├── compose/
 │   └── init-db/        # PG bootstrap SQL run on first `db` container start
@@ -51,24 +59,38 @@ Requirements: Python 3.10+, Node.js (or Bun).
 
 ### 1. Start the backend
 
-From the repo root, create a venv and install all four services as editable packages:
+From the repo root, create a venv and install the five backend packages (`shared` + four services) using the Makefile:
 
 ```bash
 python3 -m venv backend/.venv
 source backend/.venv/bin/activate
 pip install -U pip
-pip install -e backend/shared \
-            -e backend/gateway \
-            -e backend/svc-patient \
-            -e backend/svc-lab \
-            -e backend/svc-disease
+make -C backend install
 ```
 
-Launch all four services at once (`Ctrl-C` propagates to every child):
+Then pick a data backend:
+
+#### Option A — JSON fixture mode (default, no PostgreSQL needed)
 
 ```bash
 bash backend/scripts/dev.sh
 ```
+
+`shared.data_loader` reads `backend/mock-data/` directly. This is the fastest path for everyday frontend work — `Ctrl-C` propagates to every child.
+
+#### Option B — PostgreSQL mode
+
+If you want to develop against a live `gimc` database:
+
+```bash
+sudo bash backend/scripts/setup-postgres.sh    # one-time: install PG 16, create role / db / 5 schemas
+cp backend/.env.example backend/.env            # then set GIMC_DATA_BACKEND=postgres
+make -C backend alembic-up                      # apply migrations
+make -C backend seed-pg                         # load mock-data into PG (idempotent)
+bash backend/scripts/dev.sh                     # services now read PG instead of JSON
+```
+
+`make -C backend verify-pg` runs the 7-check parity suite once the services are up.
 
 ### 2. Start the frontend
 
@@ -136,6 +158,8 @@ In real prod you usually want managed PostgreSQL (RDS, Cloud SQL, ...):
 
 ## Smoke Tests
 
+End-to-end via the gateway (works in both data backends):
+
 ```bash
 # gateway healthcheck
 curl -s http://localhost:8000/healthz
@@ -147,10 +171,17 @@ curl -s http://localhost:8000/patients | jq 'length'
 curl -s http://localhost:8000/patients/4e645243-fe58-5f74-b0bf-4271b5fdc0bf | jq '.aa | length'
 ```
 
-Validate mock-data FK integrity without booting any service:
+Backend-specific checks without going through the gateway:
 
 ```bash
+# JSON mode — FK sweep over backend/mock-data/, no DB needed
 python3 backend/scripts/load_mock.py
+
+# PG mode — confirm migrations match SQLAlchemy metadata (non-zero on drift)
+make -C backend alembic-check
+
+# PG mode — full 7-check parity suite (counts, FK integrity, perf baseline, ...)
+make -C backend verify-pg
 ```
 
 ## Error Model
@@ -172,7 +203,19 @@ Frontend (run from `frontend/`):
 | `npm test` / `test:watch` | Vitest unit tests |
 | `npm run test:e2e` | Playwright E2E |
 
-Backend: see `backend/README.md`. Individual services can be run with `uvicorn <pkg>.app:app --reload`.
+Backend (run from repo root or `backend/`; see also [`backend/README.md`](backend/README.md)):
+
+| Command | Purpose |
+| --- | --- |
+| `make -C backend install` | Install all five packages (`shared` + 4 services) into the active venv as editable |
+| `make -C backend alembic-up` | Apply pending PG migrations (`alembic upgrade head`) |
+| `make -C backend alembic-check` | Compare metadata vs DB; non-zero on drift |
+| `make -C backend seed-pg` | Load `mock-data/` JSON into PG (idempotent: `TRUNCATE … CASCADE` then bulk insert) |
+| `make -C backend verify-pg` | 7-check parity suite (row counts, FKs, anchor UUID round-trip, perf baseline) |
+| `bash backend/scripts/dev.sh` | Start all four FastAPI services in parallel |
+| `python3 backend/scripts/load_mock.py` | Validate mock-data FK integrity without booting a service |
+
+Individual services can also be run with `uvicorn <pkg>.app:app --reload`.
 
 ## Further Reading
 
@@ -191,25 +234,30 @@ Proprietary — internal use only. All rights reserved.
 
 # 基因醫學整合查詢中心
 
-內部醫療資訊系統，讓基因醫學醫師以「病人查詢」與「條件查詢」兩種模式跨 14 個資料模組（基本資料、OPD、AA、MS/MS、Biomarker、LSD、Enzyme、GAG、DNAbank、Outbank、AADC、ALD、MMA、MPS2）檢索病人資料。前端由 Vite + React 提供 UI，後端以 FastAPI 微服務架構聚合資料。
+內部醫療資訊系統，讓基因醫學醫師以「病人查詢」與「條件查詢」兩種模式跨 14 個資料模組（基本資料、OPD、AA、MS/MS、Biomarker、LSD、Enzyme、GAG、DNAbank、Outbank、AADC、ALD、MMA、MPS2）檢索病人資料。前端由 Vite + React 提供 UI，後端以 FastAPI 微服務架構聚合資料；資料來源可在 JSON fixture（dev 預設）與 alembic 管理的 PostgreSQL `gimc` 資料庫之間切換。
 
 ## 架構總覽
 
 ```
-Browser (Vite dev server, :8080)
-        │
-        ▼
+Browser
+   │
+   ▼
+┌──────────────────────────┐
+│  frontend (Vite SPA)     │  開發: vite :8080  │  正式: container 內 nginx
+└─────────────┬────────────┘
+              │
+              ▼
 ┌──────────────────┐      ┌───────────────┐
-│ gateway  :8000   │──────▶ svc-patient   │  :8001
-│  (BFF / CORS /   │──────▶ svc-lab       │  :8002
-│   aggregation)   │──────▶ svc-disease   │  :8003
+│ gateway  :8000   │──────▶ svc-patient   │  :8001 ─┐
+│  (BFF / CORS /   │──────▶ svc-lab       │  :8002 ─┼──▶  PostgreSQL :5432
+│   aggregation)   │──────▶ svc-disease   │  :8003 ─┘     (gimc / 5 schemas)
 └──────────────────┘      └───────────────┘
 ```
 
-- 瀏覽器只直接打 `gateway`，由 `gateway` 透過 `httpx.AsyncClient` 扇出到三個內部服務。
+- 前端 SPA 只打 `gateway`，由 `gateway` 透過 `httpx.AsyncClient` 扇出到三個內部服務。
 - 內部服務之間不互相呼叫，聚合責任全在 `gateway`。
 - 內部服務沒有 CORS middleware，瀏覽器直接存取會被阻擋（設計如此）。
-- 開發環境以 `backend/mock-data/` 的 JSON 當資料來源，啟動時由 `shared.data_loader.validate()` 檢查 FK 完整性，失敗即 non-zero 離開。
+- 資料來源由 `GIMC_DATA_BACKEND` 決定：`json`（預設，讀 `backend/mock-data/`）或 `postgres`（讀 alembic 管理的 `gimc` 資料庫，含 `main` / `external` / `nbs` / `links` / `ref` 五個 schema）。兩種模式回傳的 row 形狀完全一致，service code 在兩條路徑下不需修改。啟動時由 `shared.data_loader.validate()` 檢查 FK 完整性，失敗即在綁 port 前 non-zero 離開。
 
 ## 專案結構
 
@@ -224,9 +272,12 @@ my-project/
 │   ├── svc-patient/    # 病人基本資料（:8001）
 │   ├── svc-lab/        # 檢驗 + 檢體（:8002）
 │   ├── svc-disease/    # 疾病專案（:8003）
-│   ├── shared/         # 共用 Pydantic schemas / data_loader
-│   ├── mock-data/      # 開發用 JSON 種子資料
-│   ├── scripts/        # dev.sh、load_mock.py、docker-entrypoint.sh、seed_from_json.py
+│   ├── shared/         # Pydantic schemas + SQLAlchemy models + dual-backend data_loader
+│   ├── alembic/        # Migration 腳本（alembic.ini 在 backend/ 根目錄）
+│   ├── etl/            # 1.0 / 2.0 → PG 一次性 ETL（cutover 後退役）
+│   ├── mock-data/      # Fixture JSON；`json` 模式跟 `make seed-pg` 共用
+│   ├── scripts/        # dev.sh、setup-postgres.sh、load_mock.py、seed_from_json.py、docker-entrypoint.sh
+│   ├── Makefile        # install / alembic-up / alembic-check / seed-pg / verify-pg
 │   └── Dockerfile      # 一個 image；用 SERVICE 環境變數決定跑哪個入口
 ├── compose/
 │   └── init-db/        # PG 第一次啟動時跑的 bootstrap SQL
@@ -242,24 +293,38 @@ my-project/
 
 ### 1. 啟動後端
 
-在 repo 根目錄建立 venv 並安裝四個服務（都是 editable install）：
+在 repo 根目錄建立 venv，並用 Makefile 安裝五個 backend 套件（`shared` + 四個服務）：
 
 ```bash
 python3 -m venv backend/.venv
 source backend/.venv/bin/activate
 pip install -U pip
-pip install -e backend/shared \
-            -e backend/gateway \
-            -e backend/svc-patient \
-            -e backend/svc-lab \
-            -e backend/svc-disease
+make -C backend install
 ```
 
-一鍵啟動四個服務（`Ctrl-C` 會傳遞給全部子行程）：
+接著選一個資料來源：
+
+#### 選項 A — JSON fixture 模式（預設，不需要 PostgreSQL）
 
 ```bash
 bash backend/scripts/dev.sh
 ```
+
+`shared.data_loader` 會直接讀 `backend/mock-data/`。日常前端工作走這條路最快 — `Ctrl-C` 會傳給全部子行程。
+
+#### 選項 B — PostgreSQL 模式
+
+如要對著 live `gimc` 資料庫開發：
+
+```bash
+sudo bash backend/scripts/setup-postgres.sh    # 一次性：裝 PG 16、建立 role / db / 5 個 schema
+cp backend/.env.example backend/.env            # 然後把 GIMC_DATA_BACKEND 改成 postgres
+make -C backend alembic-up                      # 套用 migrations
+make -C backend seed-pg                         # 把 mock-data 灌進 PG（idempotent）
+bash backend/scripts/dev.sh                     # 服務改從 PG 讀，不再讀 JSON
+```
+
+服務起來後可用 `make -C backend verify-pg` 跑 7-check parity 套件。
 
 ### 2. 啟動前端
 
@@ -327,6 +392,8 @@ Frontend image 在 build 時打進一個 sentinel 字串，container entrypoint 
 
 ## 煙霧測試
 
+End-to-end 走 gateway（兩種資料模式都適用）：
+
 ```bash
 # gateway 健康檢查
 curl -s http://localhost:8000/healthz
@@ -338,10 +405,17 @@ curl -s http://localhost:8000/patients | jq 'length'
 curl -s http://localhost:8000/patients/4e645243-fe58-5f74-b0bf-4271b5fdc0bf | jq '.aa | length'
 ```
 
-不經 gateway 只驗證 mock 資料的 FK 完整性：
+不經 gateway 的後端檢查：
 
 ```bash
+# JSON 模式 — 對 backend/mock-data/ 做 FK sweep，不需要 DB
 python3 backend/scripts/load_mock.py
+
+# PG 模式 — 確認 migrations 跟 SQLAlchemy metadata 一致（不一致就 non-zero）
+make -C backend alembic-check
+
+# PG 模式 — 7-check parity 套件（row count、FK 完整性、效能基線 ...）
+make -C backend verify-pg
 ```
 
 ## 錯誤模型
@@ -363,7 +437,19 @@ python3 backend/scripts/load_mock.py
 | `npm test` / `test:watch` | Vitest 單元測試 |
 | `npm run test:e2e` | Playwright E2E |
 
-後端：見 `backend/README.md`，可用 `uvicorn <pkg>.app:app --reload` 逐個跑。
+後端（在 repo 根目錄或 `backend/` 下執行；詳見 [`backend/README.md`](backend/README.md)）：
+
+| 指令 | 用途 |
+| --- | --- |
+| `make -C backend install` | 把五個套件（`shared` + 四個服務）以 editable 模式裝進 venv |
+| `make -C backend alembic-up` | 套用 PG migrations（`alembic upgrade head`） |
+| `make -C backend alembic-check` | 比對 metadata 跟實際 DB；有 drift 時 non-zero 退出 |
+| `make -C backend seed-pg` | 把 `mock-data/` JSON 灌進 PG（idempotent：先 `TRUNCATE … CASCADE` 再 bulk insert） |
+| `make -C backend verify-pg` | 7-check parity 套件（row count、FK、anchor UUID round-trip、效能基線） |
+| `bash backend/scripts/dev.sh` | 並行啟動四個 FastAPI 服務 |
+| `python3 backend/scripts/load_mock.py` | 不啟動服務直接驗證 mock-data FK 完整性 |
+
+也可以用 `uvicorn <pkg>.app:app --reload` 逐個跑單一服務。
 
 ## 延伸文件
 
