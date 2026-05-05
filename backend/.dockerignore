@@ -1,0 +1,40 @@
+# Build context is `backend/`. Keep it small so changes outside the five
+# packages don't bust the layer cache.
+
+# Python build/dev artefacts
+**/.venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+**/*.egg-info
+**/build
+**/dist
+
+# Secrets — image must get DATABASE_URL etc. from runtime env, never baked in
+**/.env
+**/.env.*
+!**/.env.example
+
+# Dev-only fixtures: stage/prod use GIMC_DATA_BACKEND=postgres, so the
+# JSON mock-data is dead weight in the image.
+mock-data
+
+# ETL working dirs — host-side scratch space, not shipped
+etl/sources
+etl/out
+
+# Host-only scripts (the rest of scripts/ rides into the image for `seed`,
+# `migrate`, etc. — see docker-entrypoint.sh)
+scripts/dev.sh
+scripts/setup-postgres.sh
+
+# Editor / OS / VCS noise
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+*.swp
+README.md
+Makefile

@@ -63,6 +63,31 @@ running and retry.
 If `VITE_API_BASE_URL` is unset, the first call to the API client throws an
 error containing `VITE_API_BASE_URL is not set`.
 
+## Docker
+
+The frontend ships as a multi-stage image: stage 1 builds the Vite bundle
+with Bun, stage 2 serves the static `dist/` from nginx with SPA fallback +
+content-hash cache rules. Vite inlines `import.meta.env.VITE_API_BASE_URL`
+at build time, so to keep one image cross-environment we bake a sentinel in
+CI and the container's entrypoint sed-replaces it with the runtime
+`VITE_API_BASE_URL` before nginx starts.
+
+```bash
+# Build (from repo root)
+docker build -t my-project-frontend frontend/
+
+# Run, pointing at any backend gateway URL
+docker run --rm -p 8080:80 \
+    -e VITE_API_BASE_URL=http://localhost:8000 \
+    my-project-frontend
+
+# Healthcheck
+curl http://localhost:8080/healthz   # → "ok"
+```
+
+For full-stack orchestration with the backend services and Postgres, see
+the top-level [`docker-compose.yml`](../docker-compose.yml).
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).

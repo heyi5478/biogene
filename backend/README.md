@@ -108,3 +108,35 @@ python3 backend/scripts/load_mock.py
 
 Exits non-zero and prints the offending file / row / patientId on any FK
 violation.
+
+## Docker
+
+The backend ships as a single multi-stage image — one image, one venv, all
+four services + alembic + the seed script. The `SERVICE` env var picks
+which entrypoint runs at container start (see `scripts/docker-entrypoint.sh`).
+
+```bash
+# Build (run from repo root)
+docker build -t my-project-backend backend/
+
+# Gateway
+docker run --rm -p 8000:8000 \
+    -e DATABASE_URL=postgresql+asyncpg://gimc:gimc@db:5432/gimc \
+    -e GIMC_DATA_BACKEND=postgres \
+    -e SERVICE=gateway \
+    my-project-backend
+
+# Migration (one-shot — exits when alembic upgrade head completes)
+docker run --rm \
+    -e DATABASE_URL=postgresql+asyncpg://gimc:gimc@db:5432/gimc \
+    -e SERVICE=migrate \
+    my-project-backend
+```
+
+Valid `SERVICE` values: `gateway`, `svc-patient`, `svc-lab`, `svc-disease`,
+`migrate`, `seed` (one-shot mock-data load — requires `mock-data/` mounted
+at `/app/mock-data`), `shell` (drops to bash for debugging).
+
+For full-stack orchestration (PG + migrate + 4 services + frontend) use the
+top-level [`docker-compose.yml`](../docker-compose.yml) instead of running
+containers by hand.
