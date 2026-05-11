@@ -28,3 +28,6 @@ __pycache__/
 .pytest_cache/
 
 .mcp.json
+
+# 本地 ETL 文件
+backend/etl/*.md
