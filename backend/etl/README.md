@@ -83,15 +83,48 @@ By design the following are excluded from the cutover:
 python backend/etl/run_etl.py --source 2.0
 ```
 
-What happens:
-- `pgloader_2_0.load` is rendered three times via `string.Template` and
-  each invocation pgloads one MySQL DB into a temp PG schema (named
-  after the MySQL DB). pgloader's `AFTER LOAD DO` then renames the
-  schema to `main` / `external` / `nbs`.
-- `post_pgloader.sql` runs once per target schema and patches up
-  `patient_id` (CHAR(36) → UUID), adds `ntubiogene_sampleno` /
-  `v2_source_schema`, installs the `BEFORE UPDATE` trigger, and
-  recreates the partial indexes the alembic baseline normally provides.
+What happens (extract → transform → load → cleanup):
+
+1. **Extract (pgloader, ×3).** `pgloader_2_0.load` is expanded by
+   `run_etl.py` per source MySQL DB and pgloads each into a temporary
+   *staging* PG schema (`stg_main` / `stg_external` / `stg_nbs`).
+   pgloader keeps original identifiers intact — Chinese table names,
+   dash-suffixed columns, slashes, the lot — so the transform step has
+   something obvious to map from.
+
+2. **Transform (psql + transform_2_0.sql).** Once all three staging
+   schemas exist, `transform_2_0.sql` (generated from
+   `column_mapping_2_0.yaml` by `gen_transform_2_0.py`) runs in a
+   single transaction. It:
+   - `TRUNCATE … CASCADE`s the canonical `main` / `external` / `nbs`
+     tables created by the alembic baseline.
+   - For each `patient` source (`基本資料`, `opd`, `nbs`, `系統外自費`,
+     `門診個案`), `INSERT … ON CONFLICT (patient_id) DO UPDATE` with
+     `COALESCE()` so the first source wins on collisions and subsequent
+     sources only fill NULL fields. `patient_id` is
+     `uuid_generate_v5(uuid_ns_oid(), '<schema>:' || <chartno>)`.
+   - For each sample table, `INSERT … SELECT` from the staging table,
+     joining back to `patient` either by recomputing the same UUID
+     (main / external) or by `patient.nbs_id = src.Sample_name` (nbs),
+     filling `ntubiogene_sampleno` and `v2_source_schema` for audit.
+   - Every `INSERT` is guarded by `to_regclass(...) IS NULL THEN
+     RAISE NOTICE` so a missing source table is logged but doesn't
+     abort the run — important when a tenant never used (say)
+     `Out_hospital`.
+
+3. **Cleanup.** `DROP SCHEMA stg_* CASCADE`. Set `KEEP_STAGING=1` in
+   the environment to keep the staging schemas around for post-mortem.
+
+The mapping is data, not code. To adjust the 2.0 → 3.0 column wiring,
+edit `column_mapping_2_0.yaml`, re-run `python backend/etl/gen_transform_2_0.py`,
+and commit both files together. The schema is documented inline in the
+YAML header.
+
+`post_pgloader.sql` is **not** part of the 2.0 path anymore — it's a
+no-op left in the tree for the 1.0 paths to opt into. The 2.0 transform
+SQL handles `patient_id` casting, `ntubiogene_sampleno` synthesis, and
+trigger setup implicitly (triggers come from the alembic baseline, since
+we INSERT into existing canonical tables).
 
 ### Source: 1.0 (gene.mdb / Access)
 

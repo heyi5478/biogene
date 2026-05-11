@@ -11,9 +11,15 @@ which transform step belongs to which source) live.
 
 For ``--source 2.0``:
     Iterates the three (mysql_db, target_schema) pairs, expanding
-    ``pgloader_2_0.load`` for each and running pgloader, then
-    ``post_pgloader.sql``. Connection info comes from ``MYSQL_2_0_URL``
-    in the environment (or wherever orchestration cares to put it).
+    ``pgloader_2_0.load`` for each and running pgloader into a
+    ``stg_<target>`` staging schema. After all three staging schemas
+    are populated, runs ``transform_2_0.sql`` (generated from
+    ``column_mapping_2_0.yaml`` by ``gen_transform_2_0.py``) which
+    INSERTs into the canonical ``main``/``external``/``nbs`` tables
+    with column renames and ``patient_id`` UUID synthesis, then drops
+    the staging schemas (set ``KEEP_STAGING=1`` to keep them for
+    debugging). Connection info comes from ``MYSQL_2_0_URL`` in the
+    environment.
 
 For ``--source 1.0-mdb``:
     Runs ``extract_mdb.sh`` → ``extract_blobs_mdb.py`` → ``transform.py``
@@ -34,14 +40,20 @@ ETL_DIR = Path(__file__).resolve().parent
 TEMPLATE = ETL_DIR / "pgloader_2_0.load"
 POST_SQL = ETL_DIR / "post_pgloader.sql"
 
-# (mysql DB name, target PG schema). The MySQL DB names contain Unicode
-# and a dot, so they must be backtick-quoted in the connection URL. We
-# pass them as `?database=…` query strings to avoid URL-encoding pain.
+# (mysql DB name, target canonical PG schema). MySQL DB names may contain
+# a dot or non-ASCII characters so they are always backtick-quoted when
+# spliced into the pgloader URL. Defaults match the `pythonProject` 2.0
+# install; override via env vars on stage/prod if names differ.
+#
+# pgloader actually lands in `stg_<target>` (see `pgloader_2_0.load`);
+# transform_2_0.sql then moves data into the canonical schema.
 SOURCES_2_0: list[tuple[str, str]] = [
-    ("2.0",                "main"),
-    ("2.0外院資料庫",         "external"),
-    ("new_born_screening", "nbs"),
+    (os.environ.get("MYSQL_2_0_DB_MAIN",     "2.0"),             "main"),
+    (os.environ.get("MYSQL_2_0_DB_EXTERNAL", "Out_hospital"),    "external"),
+    (os.environ.get("MYSQL_2_0_DB_NBS",      "new_born_screen"), "nbs"),
 ]
+
+TRANSFORM_SQL = ETL_DIR / "transform_2_0.sql"
 
 
 def _need(*tools: str) -> None:
@@ -79,7 +91,7 @@ def _expand_template(source_schema: str, target_schema: str) -> Path:
         MYSQL_URL=full_mysql,
         PG_URL=pg_url,
         SOURCE_SCHEMA=source_schema,
-        TARGET_SCHEMA=target_schema,
+        TARGET_SCHEMA=f"stg_{target_schema}",
     )
     tmp = ETL_DIR / f".pgloader_2_0_{target_schema}.expanded.load"
     tmp.write_text(out)
@@ -87,20 +99,50 @@ def _expand_template(source_schema: str, target_schema: str) -> Path:
 
 
 def run_2_0() -> int:
+    """2.0 ETL: extract via pgloader into stg_* schemas, then transform.
+
+    Sequence per source:
+        1. pgloader: MySQL DB → stg_<target> (raw mirror, identifiers preserved)
+
+    Then once, after all three staging schemas exist:
+        2. psql -f transform_2_0.sql  — INSERT INTO <canonical> SELECT ...
+                                        FROM stg_<canonical> with renames
+                                        and uuid_generate_v5 patient_id.
+        3. DROP SCHEMA stg_main, stg_external, stg_nbs CASCADE
+           (skipped if KEEP_STAGING=1 — useful for debugging).
+    """
     _need("pgloader", "psql")
     pg_url = os.environ.get("PG_URL_SYNC", "postgresql://gimc:gimc@localhost/gimc")
+    keep_staging = os.environ.get("KEEP_STAGING") == "1"
 
+    # 1. pgloader each MySQL DB into its staging schema.
     for source_schema, target_schema in SOURCES_2_0:
-        print(f"\n=== {source_schema!r} → {target_schema!r} ===")
+        print(f"\n=== {source_schema!r} → stg_{target_schema} ===")
         load_file = _expand_template(source_schema, target_schema)
         print(f"  pgloader: {load_file.name}")
         rc = subprocess.call(["pgloader", str(load_file)])
         if rc != 0:
             return rc
-        print(f"  post_pgloader.sql for {target_schema}")
-        rc = subprocess.call(
-            ["psql", pg_url, "-v", f"target={target_schema}", "-f", str(POST_SQL)]
+
+    # 2. transform staging → canonical (single transaction).
+    if not TRANSFORM_SQL.exists():
+        sys.exit(
+            f"missing {TRANSFORM_SQL.name}; run `python backend/etl/gen_transform_2_0.py` first"
         )
+    print(f"\n=== transform: {TRANSFORM_SQL.name} ===")
+    rc = subprocess.call(["psql", pg_url, "-f", str(TRANSFORM_SQL)])
+    if rc != 0:
+        return rc
+
+    # 3. drop staging unless asked to keep.
+    if keep_staging:
+        print("\nKEEP_STAGING=1 → leaving stg_main / stg_external / stg_nbs in place.")
+    else:
+        print("\n=== cleanup: DROP SCHEMA stg_* CASCADE ===")
+        drop_sql = "DROP SCHEMA IF EXISTS stg_main CASCADE; " \
+                   "DROP SCHEMA IF EXISTS stg_external CASCADE; " \
+                   "DROP SCHEMA IF EXISTS stg_nbs CASCADE;"
+        rc = subprocess.call(["psql", pg_url, "-c", drop_sql])
         if rc != 0:
             return rc
 
