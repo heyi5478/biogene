@@ -1,0 +1,556 @@
+# =============================================================================
+# 2.0 → 3.0 ETL: pythonProject MySQL ↔ my-project PostgreSQL column mapping.
+#
+# This is the single source of truth for table & column renames between
+# the legacy 2.0 system (`pythonProject`, MySQL) and the 3.0 `gimc` PG DB.
+# `gen_transform_2_0.py` reads this file and emits `transform_2_0.sql`,
+# which is then run by `run_etl.py` after pgloader has dumped the three
+# MySQL DBs into the `stg_main` / `stg_external` / `stg_nbs` staging schemas.
+#
+# Conventions
+# -----------
+# - `source_table`  : MySQL table name (literal, may contain Unicode / `/` / space).
+# - `target_table`  : PostgreSQL table in the canonical 3.0 schema.
+# - `patient_key`   : list of source columns whose concatenation seeds the
+#                     deterministic UUID via `uuid_generate_v5(uuid_ns_oid(),
+#                     '<schema>:' || <joined key>)`. Same `chartno` across
+#                     `基本資料` / `opd` / sample tables produces the same UUID
+#                     so the patient row is naturally merged.
+# - `columns`       : { target_col: source_col_or_sql_expr }. If a value
+#                     contains special characters (Chinese, dash, slash,
+#                     space) the generator wraps it with double quotes; pass
+#                     an explicit SQL expression (e.g. `COALESCE(...)`) when
+#                     a default or transform is required.
+# - `defaults`      : { target_col: sql_default } for NOT-NULL targets that
+#                     may be NULL in 2.0. Applied via `COALESCE(<src>, <default>)`.
+# - `filter`        : optional WHERE clause; rows that fail are skipped.
+#
+# Patient merge
+# -------------
+# Each schema has exactly one `patient` target. It is built by INSERT-then-
+# UPSERT from one or more `patient_sources` entries. The first source acts
+# as the primary; subsequent sources fill NULL columns via ON CONFLICT DO
+# UPDATE with COALESCE().
+#
+# Tables NOT in 2.0
+# -----------------
+# `main.gcms`, `nbs.cah_tgal`, `nbs.dmd_tsh` have no 2.0 source; they stay
+# empty after this ETL and are populated by the 1.0-mdb path.
+# =============================================================================
+
+schemas:
+
+  # -------------------------------------------------------------------------
+  # main  ← MySQL `2.0`
+  # -------------------------------------------------------------------------
+  main:
+    source_mysql_db: "2.0"
+    staging_schema: stg_main
+
+    patient_sources:
+      # 1. 基本資料 — primary inpatient source. Wins on conflicts.
+      - source_table: "基本資料"
+        patient_key: [chartno]
+        columns:
+          name: "COALESCE(NULLIF(TRIM(ptname),''), '未命名')"
+          birthday: "COALESCE(birthday, DATE '1900-01-01')"
+          sex: "(CASE sex WHEN 'M' THEN '男' WHEN 'F' THEN '女' WHEN '男' THEN '男' WHEN '女' THEN '女' ELSE '男' END)::sex"
+          chartno: chartno
+          external_chartno: chartno_out
+          diagnosis: diagnosis
+          diagnosis2: diagnosis2
+          diagnosis3: diagnosis3
+        filter: "chartno IS NOT NULL AND TRIM(chartno) <> ''"
+
+      # 2. opd — fills patients that have outpatient visits but no 基本資料 row.
+      - source_table: opd
+        patient_key: ["病歷號"]
+        # Take DISTINCT ON to dedupe multi-visit rows; we only need one
+        # patient-level row per chartno here. Actual visit records flow into
+        # main.opd separately (see sample_tables below).
+        distinct_on: ["病歷號"]
+        columns:
+          name: "COALESCE(NULLIF(TRIM(\"病人姓名\"),''), '未命名')"
+          birthday: "COALESCE(\"生日\", DATE '1900-01-01')"
+          sex: "(CASE \"性別\" WHEN 'M' THEN '男' WHEN 'F' THEN '女' WHEN '男' THEN '男' WHEN '女' THEN '女' ELSE '男' END)::sex"
+          chartno: "\"病歷號\""
+          diagnosis: "\"主診斷名稱\""
+        filter: "\"病歷號\" IS NOT NULL AND TRIM(\"病歷號\") <> ''"
+
+    sample_tables:
+      # opd visits → main.opd
+      - source_table: opd
+        target_table: opd
+        patient_key: ["病歷號"]
+        sample_id: ~   # opd has no per-sample id; ntubiogene_sampleno stays NULL
+        columns:
+          visit_date: "COALESCE(\"看診日\", DATE '1900-01-01')"
+          sex: "COALESCE(LEFT(\"性別\", 2), '男')"
+          birthday: "COALESCE(\"生日\", DATE '1900-01-01')"
+          diag_code: "COALESCE(\"主診斷碼\", '')"
+          diag_name: "COALESCE(LEFT(\"主診斷名稱\", 256), '')"
+          sub_diag1: "LEFT(\"次診斷名稱1\", 256)"
+          sub_diag2: "LEFT(\"次診斷名稱2\", 256)"
+        filter: "\"病歷號\" IS NOT NULL AND TRIM(\"病歷號\") <> ''"
+
+      - source_table: aa
+        target_table: aa
+        patient_key: [chartno]
+        sample_id: AA_Sample_name
+        columns:
+          sample_name: "COALESCE(\"AA_Sample_name\", '')"
+          specimen_type: "COALESCE(\"AA-檢體類別\", '')"
+          result: "COALESCE(\"AA-Result\", '')"
+          gln: "\"AA-Gln\""
+          citr: "\"AA-Citr\""
+          ala: "\"AA-Ala\""
+          arg: "\"AA-Arg\""
+          leu: "\"AA-Leu\""
+          val: "\"AA-Val\""
+          phe: "\"AA-Phe\""
+          tyr: "\"AA-Tyr\""
+        filter: "chartno IS NOT NULL AND TRIM(chartno) <> ''"
+
+      - source_table: aadc
+        target_table: aadc
+        patient_key: [chartno]
+        sample_id: AADC_Sample_name
+        columns:
+          sample_name: "COALESCE(\"AADC_Sample_name\", '')"
+          conc: "COALESCE(\"AADC_Conc\", 0)"
+        filter: "chartno IS NOT NULL AND \"AADC_Conc\" IS NOT NULL"
+
+      - source_table: ald
+        target_table: ald
+        patient_key: [chartno]
+        sample_id: ALD_Sample_name
+        columns:
+          sample_name: "COALESCE(\"ALD_Sample_name\", '')"
+          conc: "COALESCE(\"ALD_Conc\", 0)"
+        filter: "chartno IS NOT NULL AND \"ALD_Conc\" IS NOT NULL"
+
+      - source_table: biomarker
+        target_table: biomarker
+        patient_key: [chartno]
+        sample_id: Biomarker_Sample_name
+        columns:
+          sample_name: "COALESCE(\"Biomarker_Sample_name\", '')"
+          dbs_lyso_gb3: "\"DBS LysoGb3\""
+          dbs_lyso_gl1: "\"DBS LysoGL1\""
+          dbs_lyso_sm: "\"DBS Lyso-SM\""
+          plasma_lyso_gb3: "\"Plasma LysoGb3\""
+          plasma_lyso_gl1: "\"Plasma LysoGL1\""
+          plasma_lyso_sm: "\"Plasma Lyso-SM\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: "dna bank"
+        target_table: dnabank
+        patient_key: [chartno]
+        sample_id: "DNA-orderno"
+        columns:
+          orderno: "COALESCE(\"DNA-orderno\", '')"
+          # Note: \"order\" is a PG reserved word, must be double-quoted in SQL.
+          # Target column literal name is `order` (already-existing column).
+          "\"order\"": "COALESCE(LEFT(\"DNA-order\", 256), '')"
+          order_memo: "LEFT(\"DNA-order_memo\", 256)"
+          keyword: "LEFT(\"DNA-keyword\", 256)"
+          specimenno: "COALESCE(\"DNA-specimenno\", '')"
+          specimen: "COALESCE(LEFT(\"DNA-specimen\", 64), '')"
+        filter: "chartno IS NOT NULL"
+
+      - source_table: enzyme
+        target_table: enzyme
+        patient_key: [chartno]
+        sample_id: Enzyme_Sample_name
+        columns:
+          sample_name: "COALESCE(\"Enzyme_Sample_name\", '')"
+          specimen_type: "COALESCE(\"Enzyme-檢體類別\", '')"
+          technician: "COALESCE(\"Enzyme-技術人員\", '')"
+          result: "COALESCE(\"Enzyme-Result\", '')"
+          mps1: "\"MPS1\""
+          enzyme_mps2: "\"Enzyme-MPS2\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: gag
+        target_table: gag
+        patient_key: [chartno]
+        sample_id: GAG_Sample_name
+        columns:
+          sample_name: "COALESCE(\"GAG_Sample_name\", '')"
+          specimen_type: "COALESCE(\"GAG-檢體類別\", '')"
+          technician: "COALESCE(\"GAG-技術人員\", '')"
+          result: "COALESCE(\"GAG-Result\", '')"
+          dmggag: "\"DMBGAG\""
+          creatinine: "\"CREATININE\""
+          mggag: "\"MGGAG\""
+          urine_creatinine: "\"UrineCreatinine\""
+          twos: "\"2S\""
+          twos_cre: "\"2SCre\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: lsd
+        target_table: lsd
+        patient_key: [chartno]
+        sample_id: LSD_Sample_name
+        columns:
+          sample_name: "COALESCE(\"LSD_Sample_name\", '')"
+          gaa: "\"GAA\""
+          gla: "\"GLA\""
+          abg: "\"ABG\""
+          idua: "\"IDUA\""
+          abg_gaa: "\"ABG/GAA\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: mma
+        target_table: mma
+        patient_key: [chartno]
+        sample_id: MMA_Sample_name
+        columns:
+          sample_name: "COALESCE(\"MMA_Sample_name\", '')"
+          conc: "COALESCE(\"MMA_Conc\", 0)"
+        filter: "chartno IS NOT NULL AND \"MMA_Conc\" IS NOT NULL"
+
+      - source_table: mps2
+        target_table: mps2
+        patient_key: [chartno]
+        sample_id: MPS2_Sample_name
+        columns:
+          sample_name: "COALESCE(\"MPS2_Sample_name\", '')"
+          mps2: "\"MPS2\""
+          tpp1: "\"TPP1\""
+          mps4a: "\"MPS4A\""
+          mps6: "\"MPS6\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: "ms/ms"
+        target_table: msms
+        patient_key: [chartno]
+        sample_id: "MS/MS_Sample_name"
+        columns:
+          sample_name: "COALESCE(\"MS/MS_Sample_name\", '')"
+          specimen_type: "COALESCE(\"MS/MS-檢體類別\", '')"
+          result: "COALESCE(\"MS/MS-Result\", '')"
+          ala: "\"Ala\""
+          arg: "\"Arg\""
+          cit: "\"Cit\""
+          gly: "\"Gly\""
+          leu: "\"Leu/Ile\""
+          met: "\"Met\""
+          phe: "\"Phe\""
+          tyr: "\"Tyr\""
+          val: "\"Val\""
+          c0: "\"C0\""
+          c2: "\"C02\""
+          c3: "\"C03\""
+          c5: "\"C05\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: outbank
+        target_table: outbank
+        patient_key: [chartno]
+        sample_id: Outbank_Sampleno
+        columns:
+          sampleno: "COALESCE(\"Outbank_Sampleno\", '')"
+          shipdate: "COALESCE(shipdate, DATE '1900-01-01')"
+          assay: "COALESCE(LEFT(assay, 256), '')"
+          result: "COALESCE(LEFT(\"Outbank-result\", 512), '')"
+        filter: "chartno IS NOT NULL"
+
+
+  # -------------------------------------------------------------------------
+  # external  ← MySQL `Out_hospital`
+  #   Same table layout as `2.0` per pythonProject's input-2.py; tables that
+  #   don't exist in external schema are skipped automatically.
+  # -------------------------------------------------------------------------
+  external:
+    source_mysql_db: "Out_hospital"
+    staging_schema: stg_external
+
+    patient_sources:
+      - source_table: "基本資料"
+        patient_key: [chartno]
+        columns:
+          name: "COALESCE(NULLIF(TRIM(ptname),''), '未命名')"
+          birthday: "COALESCE(birthday, DATE '1900-01-01')"
+          sex: "(CASE sex WHEN 'M' THEN '男' WHEN 'F' THEN '女' WHEN '男' THEN '男' WHEN '女' THEN '女' ELSE '男' END)::sex"
+          chartno: chartno
+          external_chartno: chartno_out
+          diagnosis: diagnosis
+          diagnosis2: diagnosis2
+          diagnosis3: diagnosis3
+        filter: "chartno IS NOT NULL AND TRIM(chartno) <> ''"
+
+      - source_table: opd
+        patient_key: ["病歷號"]
+        distinct_on: ["病歷號"]
+        columns:
+          name: "COALESCE(NULLIF(TRIM(\"病人姓名\"),''), '未命名')"
+          birthday: "COALESCE(\"生日\", DATE '1900-01-01')"
+          sex: "(CASE \"性別\" WHEN 'M' THEN '男' WHEN 'F' THEN '女' WHEN '男' THEN '男' WHEN '女' THEN '女' ELSE '男' END)::sex"
+          chartno: "\"病歷號\""
+          diagnosis: "\"主診斷名稱\""
+        filter: "\"病歷號\" IS NOT NULL AND TRIM(\"病歷號\") <> ''"
+
+    sample_tables:
+      - source_table: opd
+        target_table: opd
+        patient_key: ["病歷號"]
+        sample_id: ~
+        columns:
+          visit_date: "COALESCE(\"看診日\", DATE '1900-01-01')"
+          sex: "COALESCE(LEFT(\"性別\", 2), '男')"
+          birthday: "COALESCE(\"生日\", DATE '1900-01-01')"
+          diag_code: "COALESCE(\"主診斷碼\", '')"
+          diag_name: "COALESCE(LEFT(\"主診斷名稱\", 256), '')"
+          sub_diag1: "LEFT(\"次診斷名稱1\", 256)"
+          sub_diag2: "LEFT(\"次診斷名稱2\", 256)"
+        filter: "\"病歷號\" IS NOT NULL"
+
+      - source_table: aa
+        target_table: aa
+        patient_key: [chartno]
+        sample_id: AA_Sample_name
+        columns:
+          sample_name: "COALESCE(\"AA_Sample_name\", '')"
+          specimen_type: "COALESCE(\"AA-檢體類別\", '')"
+          result: "COALESCE(\"AA-Result\", '')"
+          gln: "\"AA-Gln\""
+          citr: "\"AA-Citr\""
+          ala: "\"AA-Ala\""
+          arg: "\"AA-Arg\""
+          leu: "\"AA-Leu\""
+          val: "\"AA-Val\""
+          phe: "\"AA-Phe\""
+          tyr: "\"AA-Tyr\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: biomarker
+        target_table: biomarker
+        patient_key: [chartno]
+        sample_id: Biomarker_Sample_name
+        columns:
+          sample_name: "COALESCE(\"Biomarker_Sample_name\", '')"
+          dbs_lyso_gb3: "\"DBS LysoGb3\""
+          dbs_lyso_gl1: "\"DBS LysoGL1\""
+          dbs_lyso_sm: "\"DBS Lyso-SM\""
+          plasma_lyso_gb3: "\"Plasma LysoGb3\""
+          plasma_lyso_gl1: "\"Plasma LysoGL1\""
+          plasma_lyso_sm: "\"Plasma Lyso-SM\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: enzyme
+        target_table: enzyme
+        patient_key: [chartno]
+        sample_id: Enzyme_Sample_name
+        columns:
+          sample_name: "COALESCE(\"Enzyme_Sample_name\", '')"
+          specimen_type: "COALESCE(\"Enzyme-檢體類別\", '')"
+          technician: "COALESCE(\"Enzyme-技術人員\", '')"
+          result: "COALESCE(\"Enzyme-Result\", '')"
+          mps1: "\"MPS1\""
+          enzyme_mps2: "\"Enzyme-MPS2\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: gag
+        target_table: gag
+        patient_key: [chartno]
+        sample_id: GAG_Sample_name
+        columns:
+          sample_name: "COALESCE(\"GAG_Sample_name\", '')"
+          specimen_type: "COALESCE(\"GAG-檢體類別\", '')"
+          technician: "COALESCE(\"GAG-技術人員\", '')"
+          result: "COALESCE(\"GAG-Result\", '')"
+          dmggag: "\"DMBGAG\""
+          creatinine: "\"CREATININE\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: lsd
+        target_table: lsd
+        patient_key: [chartno]
+        sample_id: LSD_Sample_name
+        columns:
+          sample_name: "COALESCE(\"LSD_Sample_name\", '')"
+          gaa: "\"GAA\""
+          gla: "\"GLA\""
+          abg: "\"ABG\""
+          idua: "\"IDUA\""
+          abg_gaa: "\"ABG/GAA\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: "ms/ms"
+        target_table: msms
+        patient_key: [chartno]
+        sample_id: "MS/MS_Sample_name"
+        columns:
+          sample_name: "COALESCE(\"MS/MS_Sample_name\", '')"
+          specimen_type: "COALESCE(\"MS/MS-檢體類別\", '')"
+          result: "COALESCE(\"MS/MS-Result\", '')"
+          ala: "\"Ala\""
+          arg: "\"Arg\""
+          cit: "\"Cit\""
+          gly: "\"Gly\""
+          leu: "\"Leu/Ile\""
+          met: "\"Met\""
+          phe: "\"Phe\""
+          tyr: "\"Tyr\""
+          val: "\"Val\""
+          c0: "\"C0\""
+          c2: "\"C02\""
+          c3: "\"C03\""
+          c5: "\"C05\""
+        filter: "chartno IS NOT NULL"
+
+      - source_table: outbank
+        target_table: outbank
+        patient_key: [chartno]
+        sample_id: Outbank_Sampleno
+        columns:
+          sampleno: "COALESCE(\"Outbank_Sampleno\", '')"
+          shipdate: "COALESCE(shipdate, DATE '1900-01-01')"
+          assay: "COALESCE(LEFT(assay, 256), '')"
+          result: "COALESCE(LEFT(\"Outbank-result\", 512), '')"
+        filter: "chartno IS NOT NULL"
+
+
+  # -------------------------------------------------------------------------
+  # nbs  ← MySQL `new_born_screen`
+  #   Join key is (Sample_name, Filter_Num) on sample tables; main patient
+  #   uniqueness is (Screen_id, NBS_Filter_Num).
+  #   patient_key here uses Screen_id only because that's the stable
+  #   per-baby id; Filter_Num can change across redraws.
+  # -------------------------------------------------------------------------
+  nbs:
+    source_mysql_db: "new_born_screen"
+    staging_schema: stg_nbs
+
+    patient_sources:
+      - source_table: nbs
+        patient_key: ["Screen_id"]
+        columns:
+          name: "COALESCE(NULLIF(TRIM(\"母姓名\"),''), '未命名')"
+          birthday: "COALESCE(\"個案生日\", DATE '1900-01-01')"
+          sex: "(CASE \"個案性別\" WHEN 'M' THEN '男' WHEN 'F' THEN '女' WHEN '1' THEN '男' WHEN '2' THEN '女' WHEN '男' THEN '男' WHEN '女' THEN '女' ELSE '男' END)::sex"
+          chartno: "\"個案病歷號\""
+          nbs_id: "\"Screen_id\""
+          category: "'inhouse'"
+        filter: "\"Screen_id\" IS NOT NULL AND TRIM(\"Screen_id\") <> ''"
+
+      - source_table: "系統外自費"
+        patient_key: ["Screen_id"]
+        distinct_on: ["Screen_id"]
+        columns:
+          name: "COALESCE(NULLIF(TRIM(\"Mother_name\"),''), '未命名')"
+          birthday: "COALESCE(\"生日\", DATE '1900-01-01')"
+          sex: "(CASE \"Sex\" WHEN 'M' THEN '男' WHEN 'F' THEN '女' WHEN '1' THEN '男' WHEN '2' THEN '女' WHEN '男' THEN '男' WHEN '女' THEN '女' ELSE '男' END)::sex"
+          chartno: "\"CHARTNO\""
+          nbs_id: "\"Screen_id\""
+          category: "'sys_external_self_pay'"
+        filter: "\"Screen_id\" IS NOT NULL"
+
+      - source_table: "門診個案"
+        patient_key: ["Screen_id"]
+        distinct_on: ["Screen_id"]
+        columns:
+          name: "COALESCE(NULLIF(TRIM(\"OPD_母姓名\"),''), '未命名')"
+          birthday: "COALESCE(\"出生日期\", DATE '1900-01-01')"
+          sex: "(CASE \"嬰兒性別\" WHEN 'M' THEN '男' WHEN 'F' THEN '女' WHEN '1' THEN '男' WHEN '2' THEN '女' WHEN '男' THEN '男' WHEN '女' THEN '女' ELSE '男' END)::sex"
+          chartno: "\"病歷號\""
+          nbs_id: "\"Screen_id\""
+          category: "'opd'"
+        filter: "\"Screen_id\" IS NOT NULL"
+
+    # NBS sample tables key on Sample_name + Filter_Num. We use Sample_name
+    # as the proxy for Screen_id (per `NBS GUI.py` join logic). The
+    # generator will emit a join from staging → patient on
+    # patient.nbs_id = Sample_name.
+    sample_tables:
+      - source_table: ms
+        target_table: msms
+        patient_key_via_nbs_id: Sample_name
+        sample_id: Sample_name
+        columns:
+          sample_name: "COALESCE(\"Sample_name\", '')"
+          specimen_type: "''"
+          result: "''"
+          ala: "\"Ala\""
+          arg: "\"Arg\""
+          cit: "\"Cit\""
+          gly: "\"Gly\""
+          leu: "\"Leu/Ile\""
+          met: "\"Met\""
+          phe: "\"Phe\""
+          tyr: "\"Tyr\""
+          val: "\"Val\""
+          c0: "\"C0\""
+          c2: "\"C02\""
+          c3: "\"C03\""
+          c5: "\"C05\""
+        filter: "\"Sample_name\" IS NOT NULL"
+
+      - source_table: bd
+        target_table: bd
+        patient_key_via_nbs_id: Sample_name
+        sample_id: Sample_name
+        columns:
+          sample_id: "COALESCE(\"Sample_name\", '')"
+          collect_date: "DATE '1900-01-01'"   # 2.0 NBS sample tables don't carry collect_date.
+          result: "''"
+          biotinidase_activity: "\"BTD Conc\""
+        filter: "\"Sample_name\" IS NOT NULL AND \"BTD Conc\" IS NOT NULL"
+
+      - source_table: cah
+        target_table: cah
+        patient_key_via_nbs_id: Sample_name
+        sample_id: Sample_name
+        columns:
+          cah_id: "COALESCE(\"Sample_name\", '')"
+          sample_id: "COALESCE(\"Sample_name\", '')"
+          collect_date: "DATE '1900-01-01'"
+          result: "''"
+          ohp17: "\"N17OHP Conc\""
+        filter: "\"Sample_name\" IS NOT NULL AND \"N17OHP Conc\" IS NOT NULL"
+
+      - source_table: dmd
+        target_table: dmd
+        patient_key_via_nbs_id: Sample_name
+        sample_id: Sample_name
+        columns:
+          dmd_id: "COALESCE(\"Sample_name\", '')"
+          sample_id: "COALESCE(\"Sample_name\", '')"
+          collect_date: "DATE '1900-01-01'"
+          result: "''"
+          ck: "\"CKMM Conc\""
+        filter: "\"Sample_name\" IS NOT NULL AND \"CKMM Conc\" IS NOT NULL"
+
+      - source_table: g6pd
+        target_table: g6pd
+        patient_key_via_nbs_id: Sample_name
+        sample_id: Sample_name
+        columns:
+          sample_id: "COALESCE(\"Sample_name\", '')"
+          collect_date: "DATE '1900-01-01'"
+          result: "''"
+          g6pd_activity: "\"G6PD Conc\""
+        filter: "\"Sample_name\" IS NOT NULL AND \"G6PD Conc\" IS NOT NULL"
+
+      - source_table: sma_scid
+        target_table: sma_scid
+        patient_key_via_nbs_id: Sample_name
+        sample_id: Sample_name
+        columns:
+          sample_id: "COALESCE(\"Sample_name\", '')"
+          collect_date: "DATE '1900-01-01'"
+          result: "''"
+          smn1_copies: "CAST(\"SMN1 CT\" AS INTEGER)"
+          trec: "\"TREC Quantity\""
+        filter: "\"Sample_name\" IS NOT NULL"
+
+      - source_table: biomarker
+        target_table: biomarker
+        patient_key_via_nbs_id: Sample_name
+        sample_id: Sample_name
+        columns:
+          sample_name: "COALESCE(\"Sample_name\", '')"
+          # NBS biomarker columns not in pythonProject 2.0 NBS schema;
+          # placeholder filter blocks all rows until real source exists.
+        filter: "FALSE"
