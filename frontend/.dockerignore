@@ -24,7 +24,8 @@ playwright-report
 test-results
 playwright.config.ts
 vitest.config.ts
-tsconfig.test.json
+# NOTE: tsconfig.test.json is referenced from tsconfig.json's `references`,
+# so Vite/esbuild needs it during build even though we never run tests in the image.
 
 # Editor / OS / VCS noise
 .git
