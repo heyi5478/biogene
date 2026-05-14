@@ -3,11 +3,7 @@ import { http, HttpResponse } from 'msw';
 import type { Patient, PatientListItem } from '@/types/patient';
 import { server } from '@/test/server';
 import { ApiError } from '@/lib/api';
-import {
-  fetchPatient,
-  fetchPatients,
-  searchByConditions,
-} from './patients';
+import { fetchPatient, fetchPatients, searchByConditions } from './patients';
 
 const makeListItem = (id: string): PatientListItem => ({
   patientId: id,

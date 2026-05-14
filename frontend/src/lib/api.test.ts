@@ -73,13 +73,11 @@ describe('apiPost', () => {
 
   it('throws ApiError with status and code on 4xx', async () => {
     server.use(
-      http.post(
-        'http://localhost:8000/patients/condition-query',
-        () =>
-          HttpResponse.json(
-            { error: 'bad_request', detail: 'unknown operator' },
-            { status: 400 },
-          ),
+      http.post('http://localhost:8000/patients/condition-query', () =>
+        HttpResponse.json(
+          { error: 'bad_request', detail: 'unknown operator' },
+          { status: 400 },
+        ),
       ),
     );
 
@@ -94,9 +92,8 @@ describe('apiPost', () => {
 
   it('throws ApiError(status=0) on network failure', async () => {
     server.use(
-      http.post(
-        'http://localhost:8000/patients/condition-query',
-        () => HttpResponse.error(),
+      http.post('http://localhost:8000/patients/condition-query', () =>
+        HttpResponse.error(),
       ),
     );
 

@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
 import { Search, Database, ArrowLeft, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -11,16 +17,9 @@ import { PatientActions } from '@/components/PatientActions';
 import { SearchSummary } from '@/components/SearchSummary';
 import { ResultModules } from '@/components/ResultModules';
 import { ConditionResults } from '@/components/ConditionResults';
-import {
-  usePatients,
-  useConditionPatients,
-} from '@/hooks/queries/usePatients';
+import { usePatients, useConditionPatients } from '@/hooks/queries/usePatients';
 import { usePatient } from '@/hooks/queries/usePatient';
-import {
-  ModuleId,
-  ConditionRow,
-  ConditionLogic,
-} from '@/types/medical';
+import { ModuleId, ConditionRow, ConditionLogic } from '@/types/medical';
 
 const tabModuleMap: Record<string, ModuleId[]> = {
   all: [],
@@ -89,7 +88,9 @@ const Index = () => {
     conditionRequest,
     conditionSubmitted && conditions.length > 0,
   );
-  const conditionResults = conditionSubmitted ? (conditionQuery.data ?? []) : [];
+  const conditionResults = conditionSubmitted
+    ? (conditionQuery.data ?? [])
+    : [];
 
   // Patient mode: auto-select when the text search returns exactly one row.
   // Condition mode keeps its pre-change UX (always shows the matched-list

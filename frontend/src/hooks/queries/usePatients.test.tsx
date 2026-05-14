@@ -68,9 +68,9 @@ describe('usePatients', () => {
 
     expect(client.getQueryData(queryKeys.patients.list('陳'))).toBeDefined();
     expect(client.getQueryData(queryKeys.patients.list('A12'))).toBeDefined();
-    expect(
-      client.getQueryData(queryKeys.patients.list('陳')),
-    ).not.toEqual(client.getQueryData(queryKeys.patients.list('A12')));
+    expect(client.getQueryData(queryKeys.patients.list('陳'))).not.toEqual(
+      client.getQueryData(queryKeys.patients.list('A12')),
+    );
   });
 
   it('does not refetch within the staleTime window', async () => {
@@ -98,8 +98,7 @@ describe('useConditionPatients', () => {
     const { wrapper } = makeWrapper();
 
     const { result } = renderHook(
-      () =>
-        useConditionPatients({ conditions: [], logic: 'AND' }, false),
+      () => useConditionPatients({ conditions: [], logic: 'AND' }, false),
       { wrapper },
     );
 

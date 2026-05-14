@@ -19,9 +19,7 @@ test.describe('Condition query: server-side basic.diagnosis contains Fabry', () 
 
     // Module: pick "基本資料".
     await page.getByRole('combobox').filter({ hasText: '選擇模組' }).click();
-    await page
-      .getByRole('option', { name: '基本資料 — 基本資料' })
-      .click();
+    await page.getByRole('option', { name: '基本資料 — 基本資料' }).click();
 
     // Field: pick "主診斷". Default operator for text fields is `contains`.
     await page.getByRole('combobox').filter({ hasText: '選擇欄位' }).click();
