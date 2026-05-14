@@ -316,6 +316,34 @@ class PatientBundle(Patient):
     smaScid: list[SmaScidRecord] = []
 
 
+class PatientListItem(Patient):
+    """Slim list shape returned by ``GET /patients`` (no module detail arrays)."""
+
+    dnabankCount: int = 0
+    outbankCount: int = 0
+    lastVisitDate: str | None = None
+    conditionHits: list[str] | None = None
+
+
+class ConditionRow(_Base):
+    moduleId: str
+    fieldId: str
+    operator: str
+    value: str = ""
+    value2: str = ""
+
+
+class ConditionRequest(_Base):
+    conditions: list[ConditionRow] = []
+    logic: Literal["AND", "OR"] = "AND"
+
+
+class ConditionMatchResponse(_Base):
+    """Per-condition patientId match lists (parallel to inbound conditions)."""
+
+    conditionMatches: list[list[str]] = []
+
+
 __all__ = [
     "PatientSource",
     "Patient",
@@ -344,4 +372,8 @@ __all__ = [
     "LabBundle",
     "DiseaseBundle",
     "PatientBundle",
+    "PatientListItem",
+    "ConditionRow",
+    "ConditionRequest",
+    "ConditionMatchResponse",
 ]
