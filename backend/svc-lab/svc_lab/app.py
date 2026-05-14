@@ -14,13 +14,19 @@ from typing import AsyncIterator
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from shared.condition import match_records
 from shared.data_loader import load_all, validate
 from shared.logging import (
     configure_logging,
     install_exception_handlers,
     install_middleware,
 )
-from shared.schemas import GcmsRecord, LabBundle
+from shared.schemas import (
+    ConditionMatchResponse,
+    ConditionRequest,
+    GcmsRecord,
+    LabBundle,
+)
 
 log = configure_logging("svc-lab")
 
@@ -104,3 +110,31 @@ def batch_labs(req: _BatchRequest) -> dict[str, dict[str, list[dict]]]:
     """
 
     return {pid: _bundle_for(pid) for pid in req.patientIds}
+
+
+# Modules svc-lab owns. Conditions whose moduleId isn't here return [].
+_LAB_MODULES = frozenset({"aa", "msms", "biomarker", "outbank", "dnabank"})
+
+
+@app.post("/labs/condition-match", response_model=ConditionMatchResponse)
+def condition_match(req: ConditionRequest) -> dict:
+    """Per-condition matched patientIds for the lab modules.
+
+    For each inbound condition, walks the corresponding ``_index`` table
+    and collects every patientId with at least one record satisfying the
+    condition. Conditions on modules outside ``_LAB_MODULES`` return [].
+    """
+    out: list[list[str]] = []
+    for cond in req.conditions:
+        if cond.moduleId not in _LAB_MODULES:
+            out.append([])
+            continue
+        table = _index[cond.moduleId]
+        matched: list[str] = []
+        for pid, rows in table.items():
+            if match_records(
+                rows, cond.fieldId, cond.operator, cond.value, cond.value2
+            ):
+                matched.append(pid)
+        out.append(matched)
+    return {"conditionMatches": out}

@@ -17,13 +17,19 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from shared.condition import match_records
 from shared.data_loader import load_all, validate
 from shared.logging import (
     configure_logging,
     install_exception_handlers,
     install_middleware,
 )
-from shared.schemas import OpdBundle, Patient
+from shared.schemas import (
+    ConditionMatchResponse,
+    ConditionRequest,
+    OpdBundle,
+    Patient,
+)
 
 log = configure_logging("svc-patient")
 
@@ -80,8 +86,61 @@ def healthz() -> dict:
 
 
 @app.get("/patients", response_model=list[Patient])
-def list_patients() -> list[dict]:
-    return _patients_list
+def list_patients(q: str | None = None) -> list[dict]:
+    """Return patient base rows, optionally filtered by ``q``.
+
+    Mirrors ``frontend/src/pages/Index.tsx:81-91``: ``name`` matches by
+    case-sensitive substring; ``chartno``/``externalChartno``/``nbsId``
+    match by case-insensitive substring.
+    """
+    if q is None or q == "":
+        return _patients_list
+    q_lower = q.lower()
+    out: list[dict] = []
+    for p in _patients_list:
+        name = p.get("name") or ""
+        if q in name:
+            out.append(p)
+            continue
+        for key in ("chartno", "externalChartno", "nbsId"):
+            v = p.get(key)
+            if v and q_lower in v.lower():
+                out.append(p)
+                break
+    return out
+
+
+@app.post("/patients/condition-match", response_model=ConditionMatchResponse)
+def condition_match(req: ConditionRequest) -> dict:
+    """Return per-condition matched patientIds for the modules svc-patient owns.
+
+    ``basic`` evaluates against the patient base row itself; ``opd``
+    evaluates against the patient's opd visit history. Conditions on
+    other modules return an empty list (the gateway routes them to
+    svc-lab / svc-disease).
+    """
+    out: list[list[str]] = []
+    for cond in req.conditions:
+        matched: list[str] = []
+        if cond.moduleId == "basic":
+            for p in _patients_list:
+                if match_records(
+                    [p], cond.fieldId, cond.operator, cond.value, cond.value2
+                ):
+                    matched.append(p["patientId"])
+        elif cond.moduleId == "opd":
+            for p in _patients_list:
+                pid = p["patientId"]
+                if match_records(
+                    _opd_by_id.get(pid, []),
+                    cond.fieldId,
+                    cond.operator,
+                    cond.value,
+                    cond.value2,
+                ):
+                    matched.append(pid)
+        out.append(matched)
+    return {"conditionMatches": out}
 
 
 @app.get("/patients/{patient_id}", response_model=Patient)

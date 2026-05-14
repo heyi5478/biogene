@@ -19,13 +19,18 @@ from typing import AsyncIterator
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from shared.condition import match_records
 from shared.data_loader import load_all, validate
 from shared.logging import (
     configure_logging,
     install_exception_handlers,
     install_middleware,
 )
-from shared.schemas import DiseaseBundle
+from shared.schemas import (
+    ConditionMatchResponse,
+    ConditionRequest,
+    DiseaseBundle,
+)
 
 log = configure_logging("svc-disease")
 
@@ -170,3 +175,28 @@ class _BatchRequest(BaseModel):
 @app.post("/diseases/batch", response_model=dict[str, DiseaseBundle])
 def batch_diseases(req: _BatchRequest) -> dict[str, dict[str, list[dict]]]:
     return {pid: _bundle_for(pid) for pid in req.patientIds}
+
+
+# Modules svc-disease owns. NBS sub-tables (`cah_tgal`, `dmd_tsh`) live
+# inside their parent rows so conditions on those modules evaluate against
+# the joined parent row (i.e. cah/dmd row containing the sub-list).
+_DISEASE_MODULES = frozenset(_ALL_OUTPUT_KEYS)
+
+
+@app.post("/diseases/condition-match", response_model=ConditionMatchResponse)
+def condition_match(req: ConditionRequest) -> dict:
+    """Per-condition matched patientIds for the disease modules svc-disease owns."""
+    out: list[list[str]] = []
+    for cond in req.conditions:
+        if cond.moduleId not in _DISEASE_MODULES:
+            out.append([])
+            continue
+        table = _index[cond.moduleId]
+        matched: list[str] = []
+        for pid, rows in table.items():
+            if match_records(
+                rows, cond.fieldId, cond.operator, cond.value, cond.value2
+            ):
+                matched.append(pid)
+        out.append(matched)
+    return {"conditionMatches": out}
