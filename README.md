@@ -121,7 +121,7 @@ A `docker-compose.yml` at the repo root brings up the full stack — PostgreSQL,
 docker compose up -d --build                      # build images + start everything
 docker compose ps                                 # confirm every service is healthy
 docker compose --profile seed run --rm seed       # one-shot: load mock-data into PG
-open http://localhost:8080                        # SPA → gateway → services → PG
+open http://localhost                             # SPA → proxy → gateway → services → PG
 ```
 
 ### Topology
@@ -131,8 +131,9 @@ open http://localhost:8080                        # SPA → gateway → services
 | `db`          | 5432       | `postgres:16` (open to host so DBeaver can connect; drop in prod)   |
 | `migrate`     | —          | one-shot `alembic upgrade head`                                     |
 | `svc-patient` / `svc-lab` / `svc-disease` | — | internal services (no host port)                          |
-| `gateway`     | 8000       | only backend port published                                         |
-| `frontend`    | 8080 → 80  | nginx serves the Vite bundle                                        |
+| `gateway`     | —          | internal only; reached via the proxy under `/api/`                  |
+| `frontend`    | —          | internal only; nginx serves the Vite bundle                         |
+| `proxy`       | 80         | nginx edge — `/` → frontend, `/api/` → gateway (prefix stripped)    |
 | `seed`        | —          | `--profile seed` only; mounts `backend/mock-data/`                  |
 
 The backend is **one image**; the `SERVICE` env var picks the entrypoint (`gateway`, `svc-patient`, `svc-lab`, `svc-disease`, `migrate`, `seed`, or `shell`).
@@ -142,11 +143,11 @@ The backend is **one image**; the `SERVICE` env var picks the entrypoint (`gatew
 The gateway's CORS allow-origin and the SPA's API base URL are env-driven. Drop a `.env` at the repo root:
 
 ```bash
-PUBLIC_API_URL=https://api.stage.example.com
-PUBLIC_WEB_URL=https://app.stage.example.com
+PUBLIC_API_URL=https://stage.example.com/api    # same origin as the SPA, under /api
+PUBLIC_WEB_URL=https://stage.example.com        # gateway CORS allow-origin (no port)
 ```
 
-The frontend image bakes a build-time sentinel; its container entrypoint sed-replaces it with the runtime `VITE_API_BASE_URL` before nginx starts — so the same image runs unchanged across environments.
+The frontend image bakes a build-time sentinel; its container entrypoint sed-replaces it with the runtime `VITE_API_BASE_URL` before nginx starts — so the same image runs unchanged across environments. With the reverse proxy in front, `PUBLIC_API_URL` is typically a same-origin path like `/api`.
 
 ### Going prod-flavoured
 
@@ -355,7 +356,7 @@ repo 根目錄的 `docker-compose.yml` 一鍵起整個 stack — PostgreSQL、al
 docker compose up -d --build                      # build images + 全部啟動
 docker compose ps                                 # 確認每個服務都 healthy
 docker compose --profile seed run --rm seed       # 一次性灌 mock-data 進 PG
-open http://localhost:8080                        # SPA → gateway → services → PG
+open http://localhost                             # SPA → proxy → gateway → services → PG
 ```
 
 ### 服務拓撲
@@ -365,8 +366,9 @@ open http://localhost:8080                        # SPA → gateway → services
 | `db`          | 5432       | `postgres:16`（給 DBeaver 連的；prod 要關掉這個 `ports`）            |
 | `migrate`     | —          | 一次性跑 `alembic upgrade head`                                     |
 | `svc-patient` / `svc-lab` / `svc-disease` | — | 內部服務（不對外）                                       |
-| `gateway`     | 8000       | 唯一對外的後端 port                                                 |
-| `frontend`    | 8080 → 80  | nginx 服務 Vite bundle                                              |
+| `gateway`     | —          | 純內部；經 proxy 的 `/api/` 對外                                    |
+| `frontend`    | —          | 純內部；nginx 服務 Vite bundle                                      |
+| `proxy`       | 80         | nginx edge — `/` → frontend、`/api/` → gateway（會 strip 前綴）     |
 | `seed`        | —          | 只有 `--profile seed` 才啟動；會掛 `backend/mock-data/`             |
 
 後端是 **一個 image**；由 `SERVICE` 環境變數決定入口（`gateway`、`svc-patient`、`svc-lab`、`svc-disease`、`migrate`、`seed`、`shell`）。
@@ -376,11 +378,11 @@ open http://localhost:8080                        # SPA → gateway → services
 Gateway 的 CORS allow-origin 跟 SPA 的 API base URL 都是環境變數驅動。在 repo 根目錄放一份 `.env`：
 
 ```bash
-PUBLIC_API_URL=https://api.stage.example.com
-PUBLIC_WEB_URL=https://app.stage.example.com
+PUBLIC_API_URL=https://stage.example.com/api    # 跟 SPA 同 origin，掛在 /api 下
+PUBLIC_WEB_URL=https://stage.example.com        # gateway CORS allow-origin（無 port）
 ```
 
-Frontend image 在 build 時打進一個 sentinel 字串，container entrypoint 啟動 nginx 前用 sed 替換成 runtime 的 `VITE_API_BASE_URL` —— 同一個 image 可在 stage / prod 跨環境跑。
+Frontend image 在 build 時打進一個 sentinel 字串，container entrypoint 啟動 nginx 前用 sed 替換成 runtime 的 `VITE_API_BASE_URL` —— 同一個 image 可在 stage / prod 跨環境跑。有 reverse proxy 之後 `PUBLIC_API_URL` 通常就是相對路徑 `/api`。
 
 ### 改成 prod 風格
 
