@@ -3,7 +3,7 @@
 
 export type PatientSource = 'main' | 'external' | 'nbs';
 
-export interface Patient {
+export interface PatientBase {
   patientId: string;
   source: PatientSource;
   chartno?: string;
@@ -17,6 +17,9 @@ export interface Patient {
   diagnosis?: string;
   diagnosis2?: string;
   diagnosis3?: string;
+}
+
+export interface Patient extends PatientBase {
   opd: OpdRecord[];
   aa: AaSample[];
   msms: MsmsSample[];
@@ -35,6 +38,13 @@ export interface Patient {
   dmd: DmdSample[];
   g6pd: G6pdSample[];
   smaScid: SmaScidSample[];
+}
+
+export interface PatientListItem extends PatientBase {
+  dnabankCount: number;
+  outbankCount: number;
+  lastVisitDate: string | null;
+  conditionHits?: string[];
 }
 
 export interface OpdRecord {

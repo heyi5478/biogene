@@ -165,10 +165,19 @@ End-to-end via the gateway (works in both data backends):
 # gateway healthcheck
 curl -s http://localhost:8000/healthz
 
-# full patient list
-curl -s http://localhost:8000/patients | jq 'length'
+# slim patient list (no module arrays — see PatientListItem in shared.schemas)
+curl -s http://localhost:8000/patients | jq 'length, .[0] | keys'
 
-# single aggregated patient bundle
+# server-side text search via ?q=
+curl -s 'http://localhost:8000/patients?q=陳' | jq '.[].name'
+
+# server-side condition search
+curl -s -X POST http://localhost:8000/patients/condition-query \
+  -H 'Content-Type: application/json' \
+  -d '{"conditions":[{"moduleId":"basic","fieldId":"diagnosis","operator":"contains","value":"Fabry","value2":""}],"logic":"AND"}' \
+  | jq '.[] | {name, conditionHits}'
+
+# single aggregated patient bundle (the only place module arrays still come back)
 curl -s http://localhost:8000/patients/4e645243-fe58-5f74-b0bf-4271b5fdc0bf | jq '.aa | length'
 ```
 
@@ -400,10 +409,19 @@ End-to-end 走 gateway（兩種資料模式都適用）：
 # gateway 健康檢查
 curl -s http://localhost:8000/healthz
 
-# 完整病人清單
-curl -s http://localhost:8000/patients | jq 'length'
+# 精簡病人清單（不含模組陣列；對應 shared.schemas 的 PatientListItem）
+curl -s http://localhost:8000/patients | jq 'length, .[0] | keys'
 
-# 單一病人聚合 bundle
+# 透過 ?q= 做伺服器端文字搜尋
+curl -s 'http://localhost:8000/patients?q=陳' | jq '.[].name'
+
+# 伺服器端條件搜尋
+curl -s -X POST http://localhost:8000/patients/condition-query \
+  -H 'Content-Type: application/json' \
+  -d '{"conditions":[{"moduleId":"basic","fieldId":"diagnosis","operator":"contains","value":"Fabry","value2":""}],"logic":"AND"}' \
+  | jq '.[] | {name, conditionHits}'
+
+# 單一病人聚合 bundle（模組陣列只在這裡回傳）
 curl -s http://localhost:8000/patients/4e645243-fe58-5f74-b0bf-4271b5fdc0bf | jq '.aa | length'
 ```
 

@@ -26,13 +26,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from shared.condition import hit_summary
 from shared.data_loader import validate
 from shared.logging import (
     configure_logging,
     install_exception_handlers,
     install_middleware,
 )
-from shared.schemas import PatientBundle
+from shared.schemas import (
+    ConditionRequest,
+    PatientBundle,
+    PatientListItem,
+)
 
 log = configure_logging("gateway")
 
@@ -97,9 +102,10 @@ async def _get_json(
     url: str,
     *,
     headers: dict | None = None,
+    params: dict | None = None,
 ) -> Any:
     try:
-        resp = await client.get(url, headers=headers)
+        resp = await client.get(url, headers=headers, params=params)
     except httpx.HTTPError as e:
         raise _Upstream502(service, f"connection error: {e}") from e
     if resp.status_code >= 500:
@@ -144,19 +150,163 @@ def healthz() -> dict:
     return {"status": "ok", "service": "gateway"}
 
 
-@app.get("/patients", response_model=list[PatientBundle])
-async def list_patients(request: Request) -> list[dict]:
+def _project_list_item(patient: dict, opd_bundle: dict, labs_bundle: dict) -> dict:
+    """Build a slim ``PatientListItem`` payload from a base row + per-module bundles.
+
+    Drops every module detail array; keeps only the summary counts and the
+    most recent opd visitDate.
+    """
+    opd_rows = opd_bundle.get("opd", []) or []
+    visit_dates = [r.get("visitDate") for r in opd_rows if r.get("visitDate")]
+    return {
+        **patient,
+        "dnabankCount": len(labs_bundle.get("dnabank", []) or []),
+        "outbankCount": len(labs_bundle.get("outbank", []) or []),
+        "lastVisitDate": max(visit_dates) if visit_dates else None,
+    }
+
+
+async def _fetch_list_items_for_patients(
+    client: httpx.AsyncClient,
+    patients: list[dict],
+    headers: dict,
+) -> list[dict]:
+    """Fan out to opd/labs/diseases batches and project ``PatientListItem[]``.
+
+    The diseases bundle is fetched but discarded — none of the slim list
+    fields depend on disease modules. We still hit the endpoint to keep the
+    fan-out shape uniform with the detail flow and to surface 502s early
+    if svc-disease is unreachable.
+    """
+    if not patients:
+        return []
+    ids = [p["patientId"] for p in patients]
+    opd_task = _post_json(
+        client, "svc-patient", f"{SVC_PATIENT_URL}/opd/batch",
+        {"patientIds": ids}, headers=headers,
+    )
+    labs_task = _post_json(
+        client, "svc-lab", f"{SVC_LAB_URL}/labs/batch",
+        {"patientIds": ids}, headers=headers,
+    )
+    diseases_task = _post_json(
+        client, "svc-disease", f"{SVC_DISEASE_URL}/diseases/batch",
+        {"patientIds": ids}, headers=headers,
+    )
+    opd_map, labs_map, _ = await asyncio.gather(opd_task, labs_task, diseases_task)
+    return [
+        _project_list_item(
+            p,
+            opd_map.get(p["patientId"], {}),
+            labs_map.get(p["patientId"], {}),
+        )
+        for p in patients
+    ]
+
+
+@app.get("/patients", response_model=list[PatientListItem])
+async def list_patients(request: Request, q: str | None = None) -> list[dict]:
     assert _client is not None, "httpx client not initialized"
     headers = {"X-Request-ID": request.state.request_id}
 
+    params = {"q": q} if q else None
     patients = await _get_json(
-        _client, "svc-patient", f"{SVC_PATIENT_URL}/patients", headers=headers
+        _client, "svc-patient", f"{SVC_PATIENT_URL}/patients",
+        headers=headers, params=params,
     )
     if patients is None:
         raise _Upstream502("svc-patient", "unexpected 404 on /patients")
 
-    ids = [p["patientId"] for p in patients]
+    return await _fetch_list_items_for_patients(_client, patients, headers)
 
+
+# Which downstream service owns each moduleId. Anything not in
+# _PATIENT_MODULES or _LAB_MODULES is routed to svc-disease (the disease
+# service catches everything else, including unknown modules — its
+# condition-match endpoint returns [] for ids it doesn't index).
+_PATIENT_MODULES = frozenset({"basic", "opd"})
+_LAB_MODULES = frozenset({"aa", "msms", "biomarker", "outbank", "dnabank"})
+
+
+def _records_for_module(
+    module_id: str,
+    patient: dict,
+    opd_bundle: dict,
+    labs_bundle: dict,
+    diseases_bundle: dict,
+) -> list[dict]:
+    if module_id == "basic":
+        return [patient]
+    if module_id == "opd":
+        return opd_bundle.get("opd", []) or []
+    if module_id in _LAB_MODULES:
+        return labs_bundle.get(module_id, []) or []
+    return diseases_bundle.get(module_id, []) or []
+
+
+@app.post("/patients/condition-query", response_model=list[PatientListItem])
+async def condition_query(req: ConditionRequest, request: Request) -> list[dict]:
+    assert _client is not None, "httpx client not initialized"
+    headers = {"X-Request-ID": request.state.request_id}
+
+    if not req.conditions:
+        return []
+
+    # Bucket conditions by owning service, remembering original index so we
+    # can stitch per-condition results back together for AND/OR combination.
+    patient_bucket: list[tuple[int, dict]] = []
+    lab_bucket: list[tuple[int, dict]] = []
+    disease_bucket: list[tuple[int, dict]] = []
+    for i, cond in enumerate(req.conditions):
+        entry = (i, cond.model_dump())
+        if cond.moduleId in _PATIENT_MODULES:
+            patient_bucket.append(entry)
+        elif cond.moduleId in _LAB_MODULES:
+            lab_bucket.append(entry)
+        else:
+            disease_bucket.append(entry)
+
+    async def _call(service: str, url: str, bucket: list[tuple[int, dict]]) -> list[list[str]]:
+        if not bucket:
+            return []
+        body = {"conditions": [c for _, c in bucket], "logic": req.logic}
+        resp = await _post_json(_client, service, url, body, headers=headers)
+        return resp.get("conditionMatches", [])
+
+    patient_res, lab_res, disease_res = await asyncio.gather(
+        _call("svc-patient", f"{SVC_PATIENT_URL}/patients/condition-match", patient_bucket),
+        _call("svc-lab", f"{SVC_LAB_URL}/labs/condition-match", lab_bucket),
+        _call("svc-disease", f"{SVC_DISEASE_URL}/diseases/condition-match", disease_bucket),
+    )
+
+    per_cond_sets: list[set[str]] = [set() for _ in req.conditions]
+    for (orig_i, _), pids in zip(patient_bucket, patient_res):
+        per_cond_sets[orig_i] = set(pids)
+    for (orig_i, _), pids in zip(lab_bucket, lab_res):
+        per_cond_sets[orig_i] = set(pids)
+    for (orig_i, _), pids in zip(disease_bucket, disease_res):
+        per_cond_sets[orig_i] = set(pids)
+
+    if req.logic == "AND":
+        combined: set[str] = set.intersection(*per_cond_sets)
+    else:
+        combined = set.union(*per_cond_sets)
+
+    if not combined:
+        return []
+
+    # Resolve full base rows for the matched ids by calling svc-patient's list
+    # (cheap — already in-memory there).
+    all_patients = await _get_json(
+        _client, "svc-patient", f"{SVC_PATIENT_URL}/patients", headers=headers,
+    )
+    if all_patients is None:
+        raise _Upstream502("svc-patient", "unexpected 404 on /patients")
+    base_by_pid: dict[str, dict] = {p["patientId"]: p for p in all_patients}
+    selected = [base_by_pid[pid] for pid in combined if pid in base_by_pid]
+
+    # Fan out batches for slim summary AND hit-summary computation.
+    ids = [p["patientId"] for p in selected]
     opd_task = _post_json(
         _client, "svc-patient", f"{SVC_PATIENT_URL}/opd/batch",
         {"patientIds": ids}, headers=headers,
@@ -173,15 +323,24 @@ async def list_patients(request: Request) -> list[dict]:
         opd_task, labs_task, diseases_task
     )
 
-    return [
-        _merge_bundle(
-            p,
-            opd_map.get(p["patientId"], {}),
-            labs_map.get(p["patientId"], {}),
-            diseases_map.get(p["patientId"], {}),
-        )
-        for p in patients
-    ]
+    items: list[dict] = []
+    for p in selected:
+        pid = p["patientId"]
+        opd_b = opd_map.get(pid, {})
+        labs_b = labs_map.get(pid, {})
+        diseases_b = diseases_map.get(pid, {})
+        item = _project_list_item(p, opd_b, labs_b)
+        hits: list[str] = []
+        for i, cond in enumerate(req.conditions):
+            if pid not in per_cond_sets[i]:
+                continue
+            records = _records_for_module(cond.moduleId, p, opd_b, labs_b, diseases_b)
+            summary = hit_summary(records, cond.moduleId, cond.fieldId)
+            if summary:
+                hits.append(summary)
+        item["conditionHits"] = hits
+        items.append(item)
+    return items
 
 
 @app.get("/patients/{patient_id}", response_model=PatientBundle)

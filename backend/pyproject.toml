@@ -1,0 +1,15 @@
+[tool.pytest.ini_options]
+# Run all backend tests with: pytest backend/   (or just `pytest` from this dir).
+# Per-package pytest invocation (cd svc-lab && pytest) keeps working because
+# each package's pyproject.toml is the closest config when run that way.
+testpaths = [
+    "shared/tests",
+    "svc-patient/tests",
+    "svc-lab/tests",
+    "svc-disease/tests",
+    "gateway/tests",
+]
+# rootdir-style test IDs avoid the duplicate-`tests`-package collision that
+# would otherwise happen when pytest tries to import every tests/ dir as the
+# same module name.
+addopts = "-q --import-mode=importlib"

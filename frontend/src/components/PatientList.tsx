@@ -1,9 +1,9 @@
 import { Badge } from '@/components/ui/badge';
-import { Patient } from '@/types/medical';
+import type { PatientListItem } from '@/types/medical';
 
 interface PatientListProps {
-  patients: Patient[];
-  onSelect: (patient: Patient) => void;
+  patients: PatientListItem[];
+  onSelect: (patientId: string) => void;
 }
 
 export function PatientList({ patients, onSelect }: PatientListProps) {
@@ -15,7 +15,7 @@ export function PatientList({ patients, onSelect }: PatientListProps) {
       {patients.map((p) => (
         <button
           key={p.patientId}
-          onClick={() => onSelect(p)}
+          onClick={() => onSelect(p.patientId)}
           className="w-full rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-accent/50"
         >
           <div className="flex items-center gap-3">

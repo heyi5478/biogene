@@ -42,27 +42,58 @@ async function parseBody(response: Response): Promise<unknown> {
   }
 }
 
-export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  method: 'GET' | 'POST',
+  path: string,
+  init?: RequestInit,
+  body?: unknown,
+): Promise<T> {
   const baseUrl = getBaseUrl();
+  const headers = new Headers(init?.headers);
+  let payload: BodyInit | undefined;
+  if (body !== undefined) {
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+    payload = JSON.stringify(body);
+  }
+
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}${path}`, { ...init, method: 'GET' });
+    response = await fetch(`${baseUrl}${path}`, {
+      ...init,
+      method,
+      headers,
+      body: payload,
+    });
   } catch (err) {
     const message =
       err instanceof Error ? err.message : 'Network request failed';
     throw new ApiError(0, null, `Network error: ${message}`);
   }
 
-  const body = await parseBody(response).catch(() => null);
+  const parsed = await parseBody(response).catch(() => null);
 
   if (!response.ok) {
     throw new ApiError(
       response.status,
-      body,
-      `GET ${path} failed: ${response.status} ${response.statusText}`,
-      extractCode(body),
+      parsed,
+      `${method} ${path} failed: ${response.status} ${response.statusText}`,
+      extractCode(parsed),
     );
   }
 
-  return body as T;
+  return parsed as T;
+}
+
+export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
+  return request<T>('GET', path, init);
+}
+
+export async function apiPost<T>(
+  path: string,
+  body: unknown,
+  init?: RequestInit,
+): Promise<T> {
+  return request<T>('POST', path, init, body);
 }
