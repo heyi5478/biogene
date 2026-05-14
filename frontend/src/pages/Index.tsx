@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useTransition } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import { Search, Database, ArrowLeft, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -10,14 +10,14 @@ import { PatientList } from '@/components/PatientList';
 import { PatientActions } from '@/components/PatientActions';
 import { SearchSummary } from '@/components/SearchSummary';
 import { ResultModules } from '@/components/ResultModules';
+import { ConditionResults } from '@/components/ConditionResults';
 import {
-  ConditionResults,
-  evaluateConditions,
-} from '@/components/ConditionResults';
-import { usePatients } from '@/hooks/queries/usePatients';
+  usePatients,
+  useConditionPatients,
+} from '@/hooks/queries/usePatients';
+import { usePatient } from '@/hooks/queries/usePatient';
 import {
   ModuleId,
-  Patient,
   ConditionRow,
   ConditionLogic,
 } from '@/types/medical';
@@ -42,14 +42,18 @@ const tabModuleMap: Record<string, ModuleId[]> = {
   nbs: ['bd', 'cah', 'dmd', 'g6pd', 'smaScid'],
 };
 
-const Index = () => {
-  // Patient data from gateway
-  const { data: patients, isLoading, isError, error, refetch } = usePatients();
-  const isInitialLoading = isLoading && !patients;
-  const errorMessage =
-    error instanceof Error ? error.message : '發生未知錯誤，請稍後再試。';
+function DetailLoadingSkeleton() {
+  return (
+    <div className="space-y-2" data-testid="patient-detail-loading">
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-64 w-full" />
+    </div>
+  );
+}
 
-  // Non-urgent updates for heavy search/filter work
+const Index = () => {
+  // Non-urgent updates for heavy submit transitions.
   const [, startSearchTransition] = useTransition();
 
   // Mode
@@ -59,48 +63,81 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [selectedModules, setSelectedModules] = useState<ModuleId[]>([]);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
+    null,
+  );
   const [activeTab, setActiveTab] = useState('all');
 
   // Condition query state
   const [conditions, setConditions] = useState<ConditionRow[]>([]);
   const [conditionLogic, setConditionLogic] = useState<ConditionLogic>('AND');
   const [conditionSubmitted, setConditionSubmitted] = useState(false);
-  const [conditionPatient, setConditionPatient] = useState<Patient | null>(
+  const [conditionPatientId, setConditionPatientId] = useState<string | null>(
     null,
   );
+
+  // Server-driven patient search — runs only after the user submits a query.
+  const patientsQuery = usePatients(submittedQuery);
+  const results = submittedQuery ? (patientsQuery.data ?? []) : [];
+
+  // Server-driven condition search — gated until the user submits.
+  const conditionRequest = useMemo(
+    () => ({ conditions, logic: conditionLogic }),
+    [conditions, conditionLogic],
+  );
+  const conditionQuery = useConditionPatients(
+    conditionRequest,
+    conditionSubmitted && conditions.length > 0,
+  );
+  const conditionResults = conditionSubmitted ? (conditionQuery.data ?? []) : [];
+
+  // Patient mode: auto-select when the text search returns exactly one row.
+  // Condition mode keeps its pre-change UX (always shows the matched-list
+  // table first; user clicks 查看 to drill into a single patient).
+  useEffect(() => {
+    if (results.length === 1 && selectedPatientId === null) {
+      setSelectedPatientId(results[0].patientId);
+    }
+  }, [results, selectedPatientId]);
+
+  // Detail bundle for the currently selected patient (either mode).
+  const detailId = selectedPatientId ?? conditionPatientId ?? undefined;
+  const detailQuery = usePatient(detailId);
+  const displayPatient = detailQuery.data ?? null;
+
+  const isInitialLoading =
+    (queryMode === 'patient' && submittedQuery && patientsQuery.isPending) ||
+    (queryMode !== 'patient' &&
+      conditionSubmitted &&
+      conditions.length > 0 &&
+      conditionQuery.isPending);
+  const isError =
+    (queryMode === 'patient' && patientsQuery.isError) ||
+    (queryMode !== 'patient' && conditionQuery.isError);
+  const error =
+    (queryMode === 'patient' ? patientsQuery.error : conditionQuery.error) ??
+    null;
+  const errorMessage =
+    error instanceof Error ? error.message : '發生未知錯誤，請稍後再試。';
+  const refetch =
+    queryMode === 'patient' ? patientsQuery.refetch : conditionQuery.refetch;
+
+  const effectiveModules: ModuleId[] =
+    activeTab !== 'all' ? tabModuleMap[activeTab] || [] : selectedModules;
 
   // Patient query handlers
   const handleSearch = useCallback(() => {
     startSearchTransition(() => {
       setSubmittedQuery(searchQuery);
-      setSelectedPatient(null);
+      setSelectedPatientId(null);
     });
   }, [searchQuery]);
-
-  const results = submittedQuery
-    ? (patients ?? []).filter((p) => {
-        const q = submittedQuery.toLowerCase();
-        return (
-          p.name.includes(submittedQuery) ||
-          (p.chartno?.toLowerCase().includes(q) ?? false) ||
-          (p.externalChartno?.toLowerCase().includes(q) ?? false) ||
-          (p.nbsId?.toLowerCase().includes(q) ?? false)
-        );
-      })
-    : [];
-
-  const displayPatient =
-    selectedPatient || (results.length === 1 ? results[0] : null);
-
-  const effectiveModules: ModuleId[] =
-    activeTab !== 'all' ? tabModuleMap[activeTab] || [] : selectedModules;
 
   const handleClearAll = useCallback(() => {
     setSearchQuery('');
     setSubmittedQuery('');
     setSelectedModules([]);
-    setSelectedPatient(null);
+    setSelectedPatientId(null);
     setActiveTab('all');
   }, []);
 
@@ -122,24 +159,21 @@ const Index = () => {
   const handleConditionSearch = useCallback(() => {
     startSearchTransition(() => {
       setConditionSubmitted(true);
-      setConditionPatient(null);
+      setConditionPatientId(null);
     });
   }, []);
 
   const handleConditionClear = useCallback(() => {
     setConditions([]);
     setConditionSubmitted(false);
-    setConditionPatient(null);
+    setConditionPatientId(null);
   }, []);
-
-  const conditionResults = conditionSubmitted
-    ? evaluateConditions(patients ?? [], conditions, conditionLogic)
-    : [];
 
   // Mode switch
   const handleModeChange = useCallback((mode: QueryMode) => {
     setQueryMode(mode);
-    setConditionPatient(null);
+    setConditionPatientId(null);
+    setSelectedPatientId(null);
   }, []);
 
   return (
@@ -246,59 +280,73 @@ const Index = () => {
               )}
 
               {/* Multiple patients */}
-              {submittedQuery && results.length > 1 && !selectedPatient && (
-                <PatientList patients={results} onSelect={setSelectedPatient} />
-              )}
+              {submittedQuery &&
+                results.length > 1 &&
+                selectedPatientId === null && (
+                  <PatientList
+                    patients={results}
+                    onSelect={setSelectedPatientId}
+                  />
+                )}
 
               {/* Single / selected patient */}
-              {displayPatient && (
+              {selectedPatientId !== null && (
                 <>
-                  {selectedPatient && results.length > 1 && (
+                  {results.length > 1 && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setSelectedPatient(null)}
+                      onClick={() => setSelectedPatientId(null)}
                       className="mb-1 h-7 px-2 text-xs"
                     >
                       <ArrowLeft className="mr-1 h-3.5 w-3.5" />
                       返回病人名單
                     </Button>
                   )}
-                  <PatientSummary
-                    patient={displayPatient}
-                    onJumpTo={handleJumpTo}
-                  />
-                  <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <div className="flex items-center justify-between gap-2">
-                      <TabsList className="h-8">
-                        <TabsTrigger value="all" className="h-7 text-xs">
-                          全部
-                        </TabsTrigger>
-                        <TabsTrigger value="basic" className="h-7 text-xs">
-                          基本資料
-                        </TabsTrigger>
-                        <TabsTrigger value="opd" className="h-7 text-xs">
-                          門診
-                        </TabsTrigger>
-                        <TabsTrigger value="lab" className="h-7 text-xs">
-                          檢驗
-                        </TabsTrigger>
-                        <TabsTrigger value="specimen" className="h-7 text-xs">
-                          檢體
-                        </TabsTrigger>
-                        <TabsTrigger value="nbs" className="h-7 text-xs">
-                          新生兒篩檢
-                        </TabsTrigger>
-                      </TabsList>
-                      <PatientActions patient={displayPatient} />
-                    </div>
-                    <TabsContent value={activeTab} className="mt-3">
-                      <ResultModules
+                  {detailQuery.isPending || !displayPatient ? (
+                    <DetailLoadingSkeleton />
+                  ) : (
+                    <>
+                      <PatientSummary
                         patient={displayPatient}
-                        activeModules={effectiveModules}
+                        onJumpTo={handleJumpTo}
                       />
-                    </TabsContent>
-                  </Tabs>
+                      <Tabs value={activeTab} onValueChange={setActiveTab}>
+                        <div className="flex items-center justify-between gap-2">
+                          <TabsList className="h-8">
+                            <TabsTrigger value="all" className="h-7 text-xs">
+                              全部
+                            </TabsTrigger>
+                            <TabsTrigger value="basic" className="h-7 text-xs">
+                              基本資料
+                            </TabsTrigger>
+                            <TabsTrigger value="opd" className="h-7 text-xs">
+                              門診
+                            </TabsTrigger>
+                            <TabsTrigger value="lab" className="h-7 text-xs">
+                              檢驗
+                            </TabsTrigger>
+                            <TabsTrigger
+                              value="specimen"
+                              className="h-7 text-xs"
+                            >
+                              檢體
+                            </TabsTrigger>
+                            <TabsTrigger value="nbs" className="h-7 text-xs">
+                              新生兒篩檢
+                            </TabsTrigger>
+                          </TabsList>
+                          <PatientActions patient={displayPatient} />
+                        </div>
+                        <TabsContent value={activeTab} className="mt-3">
+                          <ResultModules
+                            patient={displayPatient}
+                            activeModules={effectiveModules}
+                          />
+                        </TabsContent>
+                      </Tabs>
+                    </>
+                  )}
                 </>
               )}
             </>
@@ -306,7 +354,7 @@ const Index = () => {
           {!isError && !isInitialLoading && queryMode !== 'patient' && (
             /* Condition query mode */
             <>
-              {!conditionSubmitted && !conditionPatient && (
+              {!conditionSubmitted && conditionPatientId === null && (
                 <div className="flex h-[60vh] flex-col items-center justify-center text-center">
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                     <Search className="h-7 w-7 text-muted-foreground" />
@@ -321,63 +369,70 @@ const Index = () => {
                 </div>
               )}
 
-              {conditionSubmitted && !conditionPatient && (
+              {conditionSubmitted && conditionPatientId === null && (
                 <ConditionResults
                   conditions={conditions}
                   logic={conditionLogic}
                   matchedPatients={conditionResults}
-                  selectedPatient={conditionPatient}
-                  onSelectPatient={setConditionPatient}
-                  onBackToList={() => setConditionPatient(null)}
+                  onSelectPatient={setConditionPatientId}
                 />
               )}
 
-              {conditionPatient && (
+              {conditionPatientId !== null && (
                 <>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setConditionPatient(null)}
+                    onClick={() => setConditionPatientId(null)}
                     className="mb-1 h-7 px-2 text-xs"
                   >
                     <ArrowLeft className="mr-1 h-3.5 w-3.5" />
                     返回條件查詢結果
                   </Button>
-                  <PatientSummary
-                    patient={conditionPatient}
-                    onJumpTo={handleJumpTo}
-                  />
-                  <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <div className="flex items-center justify-between gap-2">
-                      <TabsList className="h-8">
-                        <TabsTrigger value="all" className="h-7 text-xs">
-                          全部
-                        </TabsTrigger>
-                        <TabsTrigger value="basic" className="h-7 text-xs">
-                          基本資料
-                        </TabsTrigger>
-                        <TabsTrigger value="opd" className="h-7 text-xs">
-                          門診
-                        </TabsTrigger>
-                        <TabsTrigger value="lab" className="h-7 text-xs">
-                          檢驗
-                        </TabsTrigger>
-                        <TabsTrigger value="specimen" className="h-7 text-xs">
-                          檢體
-                        </TabsTrigger>
-                        <TabsTrigger value="nbs" className="h-7 text-xs">
-                          新生兒篩檢
-                        </TabsTrigger>
-                      </TabsList>
-                      <PatientActions patient={conditionPatient} />
-                    </div>
-                    <TabsContent value={activeTab} className="mt-3">
-                      <ResultModules
-                        patient={conditionPatient}
-                        activeModules={effectiveModules}
+                  {detailQuery.isPending || !displayPatient ? (
+                    <DetailLoadingSkeleton />
+                  ) : (
+                    <>
+                      <PatientSummary
+                        patient={displayPatient}
+                        onJumpTo={handleJumpTo}
                       />
-                    </TabsContent>
-                  </Tabs>
+                      <Tabs value={activeTab} onValueChange={setActiveTab}>
+                        <div className="flex items-center justify-between gap-2">
+                          <TabsList className="h-8">
+                            <TabsTrigger value="all" className="h-7 text-xs">
+                              全部
+                            </TabsTrigger>
+                            <TabsTrigger value="basic" className="h-7 text-xs">
+                              基本資料
+                            </TabsTrigger>
+                            <TabsTrigger value="opd" className="h-7 text-xs">
+                              門診
+                            </TabsTrigger>
+                            <TabsTrigger value="lab" className="h-7 text-xs">
+                              檢驗
+                            </TabsTrigger>
+                            <TabsTrigger
+                              value="specimen"
+                              className="h-7 text-xs"
+                            >
+                              檢體
+                            </TabsTrigger>
+                            <TabsTrigger value="nbs" className="h-7 text-xs">
+                              新生兒篩檢
+                            </TabsTrigger>
+                          </TabsList>
+                          <PatientActions patient={displayPatient} />
+                        </div>
+                        <TabsContent value={activeTab} className="mt-3">
+                          <ResultModules
+                            patient={displayPatient}
+                            activeModules={effectiveModules}
+                          />
+                        </TabsContent>
+                      </Tabs>
+                    </>
+                  )}
                 </>
               )}
             </>

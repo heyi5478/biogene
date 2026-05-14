@@ -8,7 +8,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { ModuleId, Patient } from '@/types/medical';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { ModuleId, PatientListItem } from '@/types/medical';
 import { MODULE_DATE_FIELD, getRecordDate } from '@/utils/moduleDate';
 import {
   AGE_BUCKETS,
@@ -22,9 +25,10 @@ import {
   ModuleFieldPicker,
   ModuleFieldValue,
 } from '@/components/stats/ModuleFieldPicker';
+import { useFetchedPatients } from '@/hooks/queries/useFetchedPatients';
 
 interface CohortStatsPanelProps {
-  patients: Patient[];
+  patients: PatientListItem[];
 }
 
 type SexKey = '男' | '女';
@@ -63,6 +67,17 @@ function inValueRange(value: number, min: number | null, max: number | null) {
 }
 
 export function CohortStatsPanel({ patients }: CohortStatsPanelProps) {
+  // Stats need module arrays — fetch each matched patient's full bundle.
+  // React Query caches across the SPA so a previously-viewed patient is
+  // served from cache and the network cost is at most one detail fetch
+  // per never-before-seen id.
+  const ids = useMemo(() => patients.map((p) => p.patientId), [patients]);
+  const {
+    patients: fullPatients,
+    isPending,
+    isError,
+  } = useFetchedPatients(ids);
+
   const [picker, setPicker] = useState<ModuleFieldValue>({
     moduleId: '',
     fieldId: '',
@@ -90,7 +105,7 @@ export function CohortStatsPanel({ patients }: CohortStatsPanelProps) {
     const maxNum = valueMax === '' ? null : Number(valueMax);
     const hasDateField = dateField !== null;
 
-    const points: DataPoint[] = patients.flatMap((patient) => {
+    const points: DataPoint[] = fullPatients.flatMap((patient) => {
       const { sex } = patient;
       if (sex !== '男' && sex !== '女') return [];
       const arr = (patient as unknown as Record<string, unknown>)[moduleId];
@@ -122,7 +137,7 @@ export function CohortStatsPanel({ patients }: CohortStatsPanelProps) {
 
     return map;
   }, [
-    patients,
+    fullPatients,
     moduleId,
     picker.fieldId,
     dateField,
@@ -131,6 +146,24 @@ export function CohortStatsPanel({ patients }: CohortStatsPanelProps) {
     valueMin,
     valueMax,
   ]);
+
+  if (isError) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>無法載入族群統計資料</AlertTitle>
+        <AlertDescription>請稍後重試。</AlertDescription>
+      </Alert>
+    );
+  }
+  if (isPending) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

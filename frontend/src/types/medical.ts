@@ -1,5 +1,7 @@
 export type {
   Patient,
+  PatientBase,
+  PatientListItem,
   PatientSource,
   OpdRecord,
   AaSample,

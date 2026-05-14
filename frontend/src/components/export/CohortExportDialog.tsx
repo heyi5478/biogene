@@ -12,14 +12,20 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MODULE_DEFINITIONS, ModuleId, Patient } from '@/types/medical';
+import {
+  MODULE_DEFINITIONS,
+  ModuleId,
+  Patient,
+  PatientListItem,
+} from '@/types/medical';
 import { exportPatients } from '@/utils/exporters';
 import { todayStamp } from '@/utils/dateStamp';
+import { useFetchedPatients } from '@/hooks/queries/useFetchedPatients';
 
 interface CohortExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  patients: Patient[];
+  patients: PatientListItem[];
 }
 
 const EXPORTABLE_MODULES: ModuleId[] = MODULE_DEFINITIONS.map(
@@ -69,14 +75,21 @@ export function CohortExportDialog({
   onOpenChange,
   patients,
 }: CohortExportDialogProps) {
+  // Export needs the full bundle — fetch detail per id. Cached across the
+  // SPA so opening the dialog twice doesn't re-hit the network.
+  const ids = useMemo(
+    () => (open ? patients.map((p) => p.patientId) : []),
+    [open, patients],
+  );
+  const { patients: fullPatients, isPending } = useFetchedPatients(ids);
   const [selected, setSelected] = useState<Set<ModuleId>>(
-    () => new Set(defaultSelectedModules(patients)),
+    () => new Set(defaultSelectedModules(fullPatients)),
   );
   const [prefix, setPrefix] = useState(() => defaultPrefix());
 
   const [, submitAction] = useActionState(async () => {
     try {
-      await exportPatients(patients, {
+      await exportPatients(fullPatients, {
         format: 'xlsx',
         modules: EXPORTABLE_MODULES.filter((id) => selected.has(id)),
         filenamePrefix: prefix.trim(),
@@ -92,19 +105,19 @@ export function CohortExportDialog({
   }, null);
 
   useEffect(() => {
-    if (open) {
-      setSelected(new Set(defaultSelectedModules(patients)));
+    if (open && !isPending) {
+      setSelected(new Set(defaultSelectedModules(fullPatients)));
       setPrefix(defaultPrefix());
     }
-  }, [open, patients]);
+  }, [open, isPending, fullPatients]);
 
   const counts = useMemo(() => {
     const map = new Map<ModuleId, number>();
     EXPORTABLE_MODULES.forEach((id) => {
-      map.set(id, cohortRecordCount(patients, id));
+      map.set(id, cohortRecordCount(fullPatients, id));
     });
     return map;
-  }, [patients]);
+  }, [fullPatients]);
 
   const allChecked = useMemo(
     () => EXPORTABLE_MODULES.every((id) => selected.has(id)),
@@ -128,7 +141,8 @@ export function CohortExportDialog({
     });
   };
 
-  const canConfirm = selected.size > 0 && prefix.trim().length > 0;
+  const canConfirm =
+    selected.size > 0 && prefix.trim().length > 0 && !isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
