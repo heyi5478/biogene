@@ -28,19 +28,19 @@
 
 ## 6. Commit and PR
 
-- [ ] 6.1 `git switch -c fix/etl-2-0-column-mapping-out-hospital-nbs`.
-- [ ] 6.2 `git add backend/etl/column_mapping_2_0.yaml backend/etl/transform_2_0.sql openspec/changes/fix-etl-2-0-column-mapping/`.
-- [ ] 6.3 Commit with body: rename catalogue (external `aa`/`enzyme`/`lsd`/`ms/ms`, nbs `門診個案`/`ms`, main `outbank`); regenerated SQL; openspec change attached.
-- [ ] 6.4 `git push -u origin fix/etl-2-0-column-mapping-out-hospital-nbs`.
-- [ ] 6.5 `gh pr create` — title `fix(etl): align column_mapping_2_0.yaml with actual MySQL source schemas`; body links `backend/etl/LOAD_2_0_PROD.md §What's broken` for the full catalogue, lists the test plan checkboxes from §5.
+- [x] 6.1 `git switch -c fix/etl-2-0-column-mapping-out-hospital-nbs`.
+- [x] 6.2 `git add backend/etl/column_mapping_2_0.yaml backend/etl/transform_2_0.sql openspec/changes/fix-etl-2-0-column-mapping/`.
+- [x] 6.3 Commit `2f66f56` on `fix/etl-2-0-column-mapping-out-hospital-nbs`.
+- [x] 6.4 Pushed to `origin/fix/etl-2-0-column-mapping-out-hospital-nbs`.
+- [x] 6.5 PR opened: https://github.com/heyi5478/biogene/pull/61
 
 ## 7. Post-merge stage end-to-end (per `backend/etl/LOAD_2_0_PROD.md §Resume`)
 
-- [ ] 7.1 SCP regenerated `transform_2_0.sql` and updated `column_mapping_2_0.yaml` to `user@10.19.209.19:/home/user/my-project/backend/etl/`.
-- [ ] 7.2 Re-run extract (Docker python:3.12-slim, ~4 sec; replaces `stg_main`/`stg_external`/`stg_nbs`).
-- [ ] 7.3 Re-run `dedupe_2_0_staging.sql` (handles dup-chartno rows that would break `ON CONFLICT DO UPDATE`).
-- [ ] 7.4 Run `transform_2_0_wrapped.sh`; expect zero `ERROR:` lines and a final `COMMIT`.
-- [ ] 7.5 Verify canonical counts — `main.patient` / `external.patient` / `nbs.patient` should rise well above the 1.0 baseline (39,621 / 3 / 5).
-- [ ] 7.6 Restart `svc-patient svc-lab svc-disease gateway`, wait 15 s, then restart `proxy` (nginx DNS cache will 502 if `proxy` doesn't follow).
-- [ ] 7.7 Curl `/healthz`, `/api/healthz`, and one random non-sentinel `chartno` via `/api/patients/<uuid>`; expect 200s and shaped JSON.
-- [ ] 7.8 Notify requester (per the runbook flow). If 7.4 or 7.5 fails, roll back per `LOAD_2_0_PROD.md §Rollback` (5 MB pre-attempt PG backup at `~/db-backups/gimc-pre-2.0-20260514-0826.sql.gz`).
+- [x] 7.1 SCP'd to stage; md5 verified.
+- [x] 7.2 Extract: 43 tables / 2,260,387 rows (matches doc baseline; 1m08s wall-clock incl. Docker pip install).
+- [x] 7.3 Dedupe: stg_main."基本資料" 8040, stg_main."opd" 206, stg_external."基本資料" 4894, stg_nbs."nbs" 8447, stg_nbs.{"系統外自費","門診個案"} 0+0; 0.66s.
+- [x] 7.4 Wrapped transform: 0 ERROR, 56s wall-clock, final `COMMIT` reached. NOTICEs limited to TRUNCATE CASCADE and the four expected `missing source %, skipping` lines (`stg_external.{opd,gag,outbank}`, `stg_nbs.biomarker`) — design-intended `to_regclass` skips.
+- [x] 7.5 Canonical row counts post-transform: **main.patient 39,621 → 70,518** (+30,897), **external.patient 3 → 58,984** (+58,981), **nbs.patient 5 → 53,670** (+53,665). main.{aa 10976, opd 12264, enzyme 16224, msms 18347, outbank 3364}; external.{aa 434, enzyme 0 (source `stg_external.enzyme` itself is empty — Out_hospital-side data emptiness, not a column-mapping bug), lsd 30927, msms 2677}; nbs.{bd 50564, cah 49601, g6pd 45647, msms 55932, sma_scid 50556}.
+- [x] 7.6 Restarted svc-patient/svc-lab/svc-disease/gateway then proxy. Cold-start cache reload from 2.0-sized PG took longer than the 15s the runbook documents for 1.0 data — `svc-patient` finished at +7 min (loaded **183,172 patients + 12,264 opd rows** = 70518+58984+53670, exact match), `svc-disease` finished at +11 min (indexed **267,908 rows across 12 modules**). All three services + gateway + proxy report healthy.
+- [x] 7.7 `GET /healthz` → 200 `ok`; `GET /api/healthz` → 200 `{"status":"ok","service":"gateway"}`; `GET /api/patients/<uuid>` round-trip verified twice — first against an opd-empty patient (`魏嘉緯`, chartno `1068912-0`), then one with lab data (`胥    磊`, chartno `4509850`) showing `aa`+`msms`+`dnabank` rows with the renamed canonical columns (`Gln`/`Citr`/`Ala`/`Arg`, `Ala`/`Arg`/`Cit`/`Gly`, `orderno`/`order`/`orderMemo`) populated correctly.
+- [x] 7.8 Stage verified — no rollback needed.
