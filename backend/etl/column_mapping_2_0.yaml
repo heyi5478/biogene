@@ -248,9 +248,9 @@ schemas:
       - source_table: outbank
         target_table: outbank
         patient_key: [chartno]
-        sample_id: Outbank_Sampleno
+        sample_id: Outbank_Sample_name
         columns:
-          sampleno: "COALESCE(\"Outbank_Sampleno\", '')"
+          sampleno: "COALESCE(\"Outbank_Sample_name\", '')"
           shipdate: "COALESCE(shipdate, DATE '1900-01-01')"
           assay: "COALESCE(LEFT(assay, 256), '')"
           result: "COALESCE(LEFT(\"Outbank-result\", 512), '')"
@@ -312,16 +312,16 @@ schemas:
         sample_id: AA_Sample_name
         columns:
           sample_name: "COALESCE(\"AA_Sample_name\", '')"
-          specimen_type: "COALESCE(\"AA-檢體類別\", '')"
-          result: "COALESCE(\"AA-Result\", '')"
-          gln: "\"AA-Gln\""
-          citr: "\"AA-Citr\""
-          ala: "\"AA-Ala\""
-          arg: "\"AA-Arg\""
-          leu: "\"AA-Leu\""
-          val: "\"AA-Val\""
-          phe: "\"AA-Phe\""
-          tyr: "\"AA-Tyr\""
+          specimen_type: "COALESCE(\"檢體類別\", '')"
+          result: "COALESCE(\"Result\", '')"
+          gln: "\"Gln\""
+          citr: "\"Citr\""
+          ala: "\"Ala\""
+          arg: "\"Arg\""
+          leu: "\"Leu\""
+          val: "\"Val\""
+          phe: "\"Phe\""
+          tyr: "\"Tyr\""
         filter: "chartno IS NOT NULL"
 
       - source_table: biomarker
@@ -344,11 +344,11 @@ schemas:
         sample_id: Enzyme_Sample_name
         columns:
           sample_name: "COALESCE(\"Enzyme_Sample_name\", '')"
-          specimen_type: "COALESCE(\"Enzyme-檢體類別\", '')"
-          technician: "COALESCE(\"Enzyme-技術人員\", '')"
-          result: "COALESCE(\"Enzyme-Result\", '')"
+          specimen_type: "COALESCE(\"檢體類別\", '')"
+          technician: "COALESCE(\"技術人員\", '')"
+          result: "COALESCE(\"Result\", '')"
           mps1: "\"MPS1\""
-          enzyme_mps2: "\"Enzyme-MPS2\""
+          enzyme_mps2: "\"MPS2\""
         filter: "chartno IS NOT NULL"
 
       - source_table: gag
@@ -374,7 +374,7 @@ schemas:
           gla: "\"GLA\""
           abg: "\"ABG\""
           idua: "\"IDUA\""
-          abg_gaa: "\"ABG/GAA\""
+          abg_gaa: "\"ABG_GAA\""
         filter: "chartno IS NOT NULL"
 
       - source_table: "ms/ms"
@@ -383,17 +383,17 @@ schemas:
         sample_id: "MS/MS_Sample_name"
         columns:
           sample_name: "COALESCE(\"MS/MS_Sample_name\", '')"
-          specimen_type: "COALESCE(\"MS/MS-檢體類別\", '')"
-          result: "COALESCE(\"MS/MS-Result\", '')"
-          ala: "\"Ala\""
-          arg: "\"Arg\""
-          cit: "\"Cit\""
-          gly: "\"Gly\""
-          leu: "\"Leu/Ile\""
-          met: "\"Met\""
-          phe: "\"Phe\""
-          tyr: "\"Tyr\""
-          val: "\"Val\""
+          specimen_type: "COALESCE(\"檢體類別\", '')"
+          result: "COALESCE(\"Result\", '')"
+          ala: "\"AA-Ala\""
+          arg: "\"AA-Arg\""
+          cit: "\"AA-Cit\""
+          gly: "\"AA-Gly\""
+          leu: "\"AA-Leu/Ile\""
+          met: "\"AA-Met\""
+          phe: "\"AA-Phe\""
+          tyr: "\"AA-Tyr\""
+          val: "\"AA-Val\""
           c0: "\"C0\""
           c2: "\"C02\""
           c3: "\"C03\""
@@ -451,7 +451,7 @@ schemas:
         patient_key: ["Screen_id"]
         distinct_on: ["Screen_id"]
         columns:
-          name: "COALESCE(NULLIF(TRIM(\"OPD_母姓名\"),''), '未命名')"
+          name: "COALESCE(NULLIF(TRIM(\"母姓名\"),''), '未命名')"
           birthday: "COALESCE(\"出生日期\", DATE '1900-01-01')"
           sex: "(CASE \"嬰兒性別\" WHEN 'M' THEN '男' WHEN 'F' THEN '女' WHEN '1' THEN '男' WHEN '2' THEN '女' WHEN '男' THEN '男' WHEN '女' THEN '女' ELSE '男' END)::sex"
           chartno: "\"病歷號\""
@@ -472,19 +472,19 @@ schemas:
           sample_name: "COALESCE(\"Sample_name\", '')"
           specimen_type: "''"
           result: "''"
-          ala: "\"Ala\""
-          arg: "\"Arg\""
-          cit: "\"Cit\""
-          gly: "\"Gly\""
-          leu: "\"Leu/Ile\""
-          met: "\"Met\""
-          phe: "\"Phe\""
-          tyr: "\"Tyr\""
-          val: "\"Val\""
+          ala: "\"ALA\""
+          arg: "\"ARG\""
+          cit: "\"CIT\""
+          gly: "\"GLY\""
+          leu: "\"LEU\""
+          met: "\"MET\""
+          phe: "\"PHE\""
+          tyr: "\"TYR\""
+          val: "\"VAL\""
           c0: "\"C0\""
-          c2: "\"C02\""
-          c3: "\"C03\""
-          c5: "\"C05\""
+          c2: "\"C2\""
+          c3: "\"C3\""
+          c5: "\"C5\""
         filter: "\"Sample_name\" IS NOT NULL"
 
       - source_table: bd
