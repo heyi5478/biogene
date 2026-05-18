@@ -20,11 +20,16 @@ export function usePatients(q: string, page: number) {
   });
 }
 
-export function useConditionPatients(req: ConditionRequest, enabled: boolean) {
+export function useConditionPatients(
+  req: ConditionRequest,
+  page: number,
+  enabled: boolean,
+) {
   return useQuery({
-    queryKey: queryKeys.patients.condition(req),
-    queryFn: () => searchByConditions(req),
+    queryKey: queryKeys.patients.condition(req, page),
+    queryFn: () => searchByConditions(req, page),
     enabled,
+    placeholderData: keepPreviousData,
     staleTime: STALE_TIME,
     gcTime: GC_TIME,
   });
