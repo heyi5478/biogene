@@ -21,7 +21,7 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -37,6 +37,7 @@ from shared.schemas import (
     ConditionRequest,
     PatientBundle,
     PatientListItem,
+    PatientListPage,
 )
 
 log = configure_logging("gateway")
@@ -204,20 +205,33 @@ async def _fetch_list_items_for_patients(
     ]
 
 
-@app.get("/patients", response_model=list[PatientListItem])
-async def list_patients(request: Request, q: str | None = None) -> list[dict]:
+@app.get("/patients", response_model=PatientListPage)
+async def list_patients(
+    request: Request,
+    q: str | None = None,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> dict:
     assert _client is not None, "httpx client not initialized"
     headers = {"X-Request-ID": request.state.request_id}
 
-    params = {"q": q} if q else None
-    patients = await _get_json(
+    params: dict = {"limit": limit, "offset": offset}
+    if q:
+        params["q"] = q
+    page = await _get_json(
         _client, "svc-patient", f"{SVC_PATIENT_URL}/patients",
         headers=headers, params=params,
     )
-    if patients is None:
+    if page is None:
         raise _Upstream502("svc-patient", "unexpected 404 on /patients")
 
-    return await _fetch_list_items_for_patients(_client, patients, headers)
+    items = await _fetch_list_items_for_patients(_client, page["items"], headers)
+    return {
+        "items": items,
+        "total": page["total"],
+        "limit": page["limit"],
+        "offset": page["offset"],
+    }
 
 
 # Which downstream service owns each moduleId. Anything not in
@@ -295,14 +309,12 @@ async def condition_query(req: ConditionRequest, request: Request) -> list[dict]
     if not combined:
         return []
 
-    # Resolve full base rows for the matched ids by calling svc-patient's list
-    # (cheap — already in-memory there).
-    all_patients = await _get_json(
-        _client, "svc-patient", f"{SVC_PATIENT_URL}/patients", headers=headers,
+    # Resolve full base rows for the matched ids via a batch id lookup —
+    # O(1) per id in svc-patient, no full-table fetch.
+    base_by_pid = await _post_json(
+        _client, "svc-patient", f"{SVC_PATIENT_URL}/patients/batch",
+        {"patientIds": list(combined)}, headers=headers,
     )
-    if all_patients is None:
-        raise _Upstream502("svc-patient", "unexpected 404 on /patients")
-    base_by_pid: dict[str, dict] = {p["patientId"]: p for p in all_patients}
     selected = [base_by_pid[pid] for pid in combined if pid in base_by_pid]
 
     # Fan out batches for slim summary AND hit-summary computation.
