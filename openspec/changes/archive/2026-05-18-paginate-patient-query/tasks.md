@@ -54,5 +54,5 @@
 - [x] 8.3 `curl -X POST http://localhost:8001/patients/batch -H 'content-type: application/json' -d '{"patientIds":["<已知id>","missing"]}'` → 只含已知 id
 - [x] 8.4 `curl 'http://localhost:8000/patients?q=王&limit=50&offset=0'` → slim 信封、回應遠低於 5 秒（502 消失）
 - [x] 8.5 瀏覽器：搜尋前 Network 無 `GET /patients`；搜尋寬鬆字 → ≤50 筆 + pager；「命中 N 位病人」為總數；翻頁、唯一姓名自動進詳情、新搜尋重設第 1 頁皆正常
-- [ ] 8.6 （部署到 stage 後）用 chrome-devtools MCP 在 http://10.19.209.19/ 重現模糊搜尋「王」，確認 502 已解除
+- [x] 8.6 （部署到 stage 後）用 chrome-devtools MCP 在 http://10.19.209.19/ 重現模糊搜尋「王」，確認 502 已解除
 - [x] 8.7 `openspec validate paginate-patient-query --strict` 通過
