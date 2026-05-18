@@ -44,4 +44,4 @@
 - [x] 7.1 `docker compose up -d --build`; curl `POST /patients/condition-query?limit=50&offset=0` with a broad condition (`性別 = 男`) → HTTP 200, `items` ≤ 50, full `total`, response < 1s (502 gone)
 - [x] 7.2 Verify `?offset` past the end → empty `items` with full `total`; `?limit=0` / `?limit=5000` / `?offset=-1` → 422
 - [x] 7.3 Browser 條件查詢 tab: a broad condition returns fast; the pager appears and navigates without a skeleton flash; editing a condition or submitting resets to page 1; the 族群統計 tab and 匯出 area show the「僅供參考」notice
-- [ ] 7.4 Final confirmation on stage after deploy (staggered start — stage RAM is tight)
+- [x] 7.4 Final confirmation on stage after deploy (staggered start — stage RAM is tight)
