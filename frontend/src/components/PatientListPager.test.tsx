@@ -12,18 +12,20 @@ describe('PatientListPager', () => {
 
   it('renders every page number when the count is small', () => {
     render(<PatientListPager page={2} pageCount={4} onPageChange={() => {}} />);
-    for (const n of ['1', '2', '3', '4']) {
+    ['1', '2', '3', '4'].forEach((n) => {
       expect(screen.getByText(n)).toBeInTheDocument();
-    }
+    });
     expect(screen.queryByText('More pages')).not.toBeInTheDocument();
   });
 
   it('collapses long runs with an ellipsis on each side of the window', () => {
-    render(<PatientListPager page={10} pageCount={20} onPageChange={() => {}} />);
+    render(
+      <PatientListPager page={10} pageCount={20} onPageChange={() => {}} />,
+    );
     // First/last boundary pages plus a one-page window around the current page.
-    for (const n of ['1', '9', '10', '11', '20']) {
+    ['1', '9', '10', '11', '20'].forEach((n) => {
       expect(screen.getByText(n)).toBeInTheDocument();
-    }
+    });
     // Pages inside the collapsed runs are not rendered.
     expect(screen.queryByText('5')).not.toBeInTheDocument();
     expect(screen.queryByText('15')).not.toBeInTheDocument();

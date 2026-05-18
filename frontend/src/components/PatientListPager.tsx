@@ -28,7 +28,7 @@ function buildPageItems(
   const sorted = [...shown].sort((a, b) => a - b);
   const items: (number | 'ellipsis')[] = [];
   let prev = 0;
-  for (const p of sorted) {
+  sorted.forEach((p) => {
     if (p - prev === 2) {
       items.push(prev + 1);
     } else if (p - prev > 2) {
@@ -36,7 +36,7 @@ function buildPageItems(
     }
     items.push(p);
     prev = p;
-  }
+  });
   return items;
 }
 

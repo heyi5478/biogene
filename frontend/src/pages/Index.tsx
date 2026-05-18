@@ -297,24 +297,22 @@ const Index = () => {
               )}
 
               {/* Multiple patients */}
-              {submittedQuery &&
-                total > 1 &&
-                selectedPatientId === null && (
-                  <>
-                    <PatientList
-                      patients={results}
-                      total={total}
-                      onSelect={setSelectedPatientId}
+              {submittedQuery && total > 1 && selectedPatientId === null && (
+                <>
+                  <PatientList
+                    patients={results}
+                    total={total}
+                    onSelect={setSelectedPatientId}
+                  />
+                  {pageCount > 1 && (
+                    <PatientListPager
+                      page={page}
+                      pageCount={pageCount}
+                      onPageChange={setPage}
                     />
-                    {pageCount > 1 && (
-                      <PatientListPager
-                        page={page}
-                        pageCount={pageCount}
-                        onPageChange={setPage}
-                      />
-                    )}
-                  </>
-                )}
+                  )}
+                </>
+              )}
 
               {/* Single / selected patient */}
               {selectedPatientId !== null && (
