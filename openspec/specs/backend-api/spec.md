@@ -10,7 +10,7 @@ The backend MUST run a FastAPI application named `gateway` that listens on `127.
 
 #### Scenario: Frontend sends request through gateway
 - **WHEN** the frontend issues `GET http://localhost:8000/patients`
-- **THEN** the gateway MUST accept the request and return an HTTP 200 with a JSON array
+- **THEN** the gateway MUST accept the request and return an HTTP 200 with a paginated JSON object of shape `{items, total, limit, offset}`
 
 #### Scenario: Internal service not reachable from frontend origin
 - **WHEN** the frontend attempts `GET http://localhost:8001/patients` (svc-patient)
@@ -51,12 +51,31 @@ The `PatientBundle` returned by `GET /patients/{patientId}` MUST include an `opd
 
 ### Requirement: Gateway list endpoint SHALL return a slim PatientListItem array
 
-The endpoint `GET /patients` MUST return `PatientListItem[]`. Each element MUST contain the patient's base fields (`patientId`, `source`, `name`, `birthday`, `sex`, optional `chartno`, optional `externalChartno`, optional `nbsId`, optional `category`, `linkedPatientIds`, optional `diagnosis`, optional `diagnosis2`, optional `diagnosis3`) plus the summary fields `dnabankCount: int`, `outbankCount: int`, `lastVisitDate: string | null`. The response MUST NOT include any module detail array (no `aa`, `msms`, `biomarker`, `aadc`, `ald`, `mma`, `mps2`, `lsd`, `enzyme`, `gag`, `dnabank`, `outbank`, `opd`, `bd`, `cah`, `dmd`, `g6pd`, `smaScid`, `gcms`).
+The endpoint `GET /patients` MUST return a paginated envelope of shape `{ "items": PatientListItem[], "total": int, "limit": int, "offset": int }`. It MUST accept `limit` (default 50, minimum 1, maximum 200) and `offset` (default 0, minimum 0) query parameters; out-of-range values MUST be rejected with HTTP 422. `items` MUST contain at most `limit` elements — the requested page of results. `total` MUST be the count of all matching patients across every page, not the page size. `limit` and `offset` MUST echo the effective values used.
 
-#### Scenario: List response shape
-- **WHEN** a client calls `GET /patients`
-- **THEN** every element MUST contain `dnabankCount`, `outbankCount`, and `lastVisitDate`
+Each element of `items` MUST contain the patient's base fields (`patientId`, `source`, `name`, `birthday`, `sex`, optional `chartno`, optional `externalChartno`, optional `nbsId`, optional `category`, `linkedPatientIds`, optional `diagnosis`, optional `diagnosis2`, optional `diagnosis3`) plus the summary fields `dnabankCount: int`, `outbankCount: int`, `lastVisitDate: string | null`. No element MUST include any module detail array (no `aa`, `msms`, `biomarker`, `aadc`, `ald`, `mma`, `mps2`, `lsd`, `enzyme`, `gag`, `dnabank`, `outbank`, `opd`, `bd`, `cah`, `dmd`, `g6pd`, `smaScid`, `gcms`).
+
+#### Scenario: Paginated response shape
+- **WHEN** a client calls `GET /patients?limit=50&offset=0`
+- **THEN** the response MUST be an object with keys `items`, `total`, `limit`, `offset`
+- **AND** `items` MUST contain at most 50 elements
+- **AND** every element MUST contain `dnabankCount`, `outbankCount`, and `lastVisitDate`
 - **AND** no element MUST contain a key whose value is an array of module records
+
+#### Scenario: total reflects the full result set
+- **WHEN** the dataset contains 120 patients and a client calls `GET /patients?limit=50&offset=0`
+- **THEN** `items` MUST contain 50 elements
+- **AND** `total` MUST be 120
+
+#### Scenario: offset past the end yields an empty page
+- **WHEN** a client calls `GET /patients` with an `offset` greater than or equal to `total`
+- **THEN** `items` MUST be an empty array
+- **AND** `total` MUST still report the full count
+- **AND** the status MUST be 200
+
+#### Scenario: Invalid pagination parameters are rejected
+- **WHEN** a client calls `GET /patients?limit=0`, `GET /patients?limit=5000`, or `GET /patients?offset=-1`
+- **THEN** the gateway MUST respond with HTTP 422
 
 #### Scenario: Summary fields reflect underlying data
 - **WHEN** a patient has 2 dnabank rows, 1 outbank row, and an opd visit on `2025-12-10`
@@ -68,24 +87,27 @@ The endpoint `GET /patients` MUST return `PatientListItem[]`. Each element MUST 
 
 ### Requirement: Gateway SHALL support text search via the `q` query parameter on the list endpoint
 
-The endpoint `GET /patients` MUST accept an optional `q` query parameter. When `q` is absent or empty, the response MUST contain every patient. When `q` is non-empty, the response MUST contain only patients whose `name`, `chartno`, `externalChartno`, or `nbsId` includes `q` (case-insensitive for the latin fields, exact substring for `name`).
+The endpoint `GET /patients` MUST accept an optional `q` query parameter alongside `limit` and `offset`. The `q` filter MUST be applied before pagination: the gateway MUST first determine the full set of matching patients, then return the `offset`-based page of at most `limit` items, with `total` set to the size of the full matching set. When `q` is absent or empty, the matching set MUST be every patient. When `q` is non-empty, the matching set MUST contain only patients whose `name`, `chartno`, `externalChartno`, or `nbsId` includes `q` (case-insensitive for the latin fields, exact substring for `name`).
 
 #### Scenario: No q parameter
-- **WHEN** a client calls `GET /patients`
-- **THEN** the response MUST contain every patient known to svc-patient
+- **WHEN** a client calls `GET /patients?limit=50&offset=0`
+- **THEN** `total` MUST equal the number of patients known to svc-patient
+- **AND** `items` MUST contain the first 50 of them (or all of them if fewer than 50)
 
 #### Scenario: q matches a name substring
 - **WHEN** the dataset includes a patient named `陳志明` and a client calls `GET /patients?q=陳`
-- **THEN** the response MUST include that patient
-- **AND** MUST NOT include patients whose name does not contain `陳` and whose chartno/externalChartno/nbsId also do not contain `陳`
+- **THEN** `total` MUST count only patients whose name contains `陳` or whose chartno/externalChartno/nbsId contains `陳`
+- **AND** that patient MUST appear in `items` when it falls within the requested page
 
 #### Scenario: q matches a chartno prefix
 - **WHEN** the dataset includes chartno `A1234567` and a client calls `GET /patients?q=A12`
-- **THEN** the response MUST include the patient with that chartno
+- **THEN** the patient with that chartno MUST be part of the matching set counted by `total`
 
 #### Scenario: q matches nothing
 - **WHEN** a client calls `GET /patients?q=zzzz_no_match`
-- **THEN** the response MUST be an empty array `[]` with status 200
+- **THEN** `items` MUST be an empty array `[]`
+- **AND** `total` MUST be 0
+- **AND** the status MUST be 200
 
 ### Requirement: Gateway SHALL accept structured condition search at POST /patients/condition-query
 
@@ -176,9 +198,10 @@ The backend MUST run four FastAPI applications:
 
 Each service MUST be independently startable via `uvicorn <package>.app:app --port <port>`.
 
-#### Scenario: svc-patient returns merged patient list
-- **WHEN** a client (gateway) calls `GET http://localhost:8001/patients`
-- **THEN** svc-patient MUST return all patients from `db_main/patient.json`, `db_external/patient.json`, and `db_nbs/patient.json`, each carrying its original `source` field
+#### Scenario: svc-patient returns a paginated patient list
+- **WHEN** a client (gateway) calls `GET http://localhost:8001/patients?limit=50&offset=0`
+- **THEN** svc-patient MUST return a paginated envelope `{items, total, limit, offset}` whose `items` are patients drawn from `db_main/patient.json`, `db_external/patient.json`, and `db_nbs/patient.json`, each carrying its original `source` field
+- **AND** `total` MUST be the full count of patients across the three files matching any supplied `q`
 
 #### Scenario: svc-lab returns lab records for one patient
 - **WHEN** gateway calls `GET http://localhost:8002/labs/{patientId}`
@@ -319,3 +342,21 @@ Each service MUST read `LOG_LEVEL` from the environment during startup and confi
 - **WHEN** a service is started with `LOG_LEVEL=WARNING`
 - **THEN** access-log lines MUST NOT appear in the process's log output
 - **AND** WARNING and ERROR lines (e.g., gateway upstream failures, catch-all handler errors) MUST still appear
+
+### Requirement: svc-patient SHALL expose a patient base-row batch endpoint
+
+`svc-patient` (port 8001) MUST expose `POST /patients/batch` accepting `{ "patientIds": [...] }` and returning `dict[patientId, Patient]` — a mapping from each requested id that exists to its patient base row. An id that no patient matches MUST be omitted from the response object (a `Patient` has required fields, so no placeholder row is possible); an unknown id MUST NOT produce an error. This endpoint lets the gateway resolve a known set of patients' base rows without fetching the whole patient table.
+
+#### Scenario: Batch base-row lookup
+- **WHEN** the gateway calls `POST http://localhost:8001/patients/batch` with `{ "patientIds": ["a", "b"] }` where both ids exist
+- **THEN** svc-patient MUST return `{"a": {<patient a base row>}, "b": {<patient b base row>}}`
+- **AND** each value MUST carry the patient's original `source` field
+
+#### Scenario: Unknown id is omitted
+- **WHEN** the request includes a `patientId` that no patient matches
+- **THEN** that id MUST be absent from the response object
+- **AND** the response status MUST be 200 (not an error)
+
+#### Scenario: Empty id list
+- **WHEN** the gateway calls `POST /patients/batch` with `{ "patientIds": [] }`
+- **THEN** svc-patient MUST return an empty object `{}` with status 200
