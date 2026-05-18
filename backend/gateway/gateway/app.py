@@ -36,7 +36,6 @@ from shared.logging import (
 from shared.schemas import (
     ConditionRequest,
     PatientBundle,
-    PatientListItem,
     PatientListPage,
 )
 
@@ -258,13 +257,18 @@ def _records_for_module(
     return diseases_bundle.get(module_id, []) or []
 
 
-@app.post("/patients/condition-query", response_model=list[PatientListItem])
-async def condition_query(req: ConditionRequest, request: Request) -> list[dict]:
+@app.post("/patients/condition-query", response_model=PatientListPage)
+async def condition_query(
+    req: ConditionRequest,
+    request: Request,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> dict:
     assert _client is not None, "httpx client not initialized"
     headers = {"X-Request-ID": request.state.request_id}
 
     if not req.conditions:
-        return []
+        return {"items": [], "total": 0, "limit": limit, "offset": offset}
 
     # Bucket conditions by owning service, remembering original index so we
     # can stitch per-condition results back together for AND/OR combination.
@@ -307,15 +311,22 @@ async def condition_query(req: ConditionRequest, request: Request) -> list[dict]
         combined = set.union(*per_cond_sets)
 
     if not combined:
-        return []
+        return {"items": [], "total": 0, "limit": limit, "offset": offset}
 
-    # Resolve full base rows for the matched ids via a batch id lookup —
-    # O(1) per id in svc-patient, no full-table fetch.
+    # ``combined`` is a set with no stable iteration order; sort by patientId
+    # before slicing so the same (conditions, logic, limit, offset) yields a
+    # stable page. ``total`` is the full match count, not the page size.
+    total = len(combined)
+    page_ids = sorted(combined)[offset : offset + limit]
+
+    # Resolve full base rows for the page ids via a batch id lookup — O(1)
+    # per id in svc-patient. Hydrating only the page keeps every downstream
+    # batch body bounded to <= limit ids, well within the gateway timeout.
     base_by_pid = await _post_json(
         _client, "svc-patient", f"{SVC_PATIENT_URL}/patients/batch",
-        {"patientIds": list(combined)}, headers=headers,
+        {"patientIds": page_ids}, headers=headers,
     )
-    selected = [base_by_pid[pid] for pid in combined if pid in base_by_pid]
+    selected = [base_by_pid[pid] for pid in page_ids if pid in base_by_pid]
 
     # Fan out batches for slim summary AND hit-summary computation.
     ids = [p["patientId"] for p in selected]
@@ -352,7 +363,7 @@ async def condition_query(req: ConditionRequest, request: Request) -> list[dict]
                 hits.append(summary)
         item["conditionHits"] = hits
         items.append(item)
-    return items
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @app.get("/patients/{patient_id}", response_model=PatientBundle)
