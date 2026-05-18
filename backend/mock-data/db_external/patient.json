@@ -28,5 +28,145 @@
     "birthday": "1995-06-07",
     "sex": "男",
     "linkedPatientIds": []
+  },
+  {
+    "patientId": "983471a3-67d3-5ed2-9770-582ca350b142",
+    "source": "external",
+    "externalChartno": "X-DEV-4000",
+    "name": "外院004",
+    "birthday": "1977-08-08",
+    "sex": "男",
+    "linkedPatientIds": [],
+    "category": "opd_case"
+  },
+  {
+    "patientId": "cbe9a322-4a83-5149-b2b7-eeba6845b374",
+    "source": "external",
+    "externalChartno": "X-DEV-4001",
+    "name": "外院005",
+    "birthday": "1978-09-09",
+    "sex": "女",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "1790e159-a672-590f-a7b4-18f600d8aa0e",
+    "source": "external",
+    "externalChartno": "X-DEV-4002",
+    "name": "外院006",
+    "birthday": "1979-10-10",
+    "sex": "男",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "f50152bd-a38b-596f-b2a4-e8a1a38e6ae7",
+    "source": "external",
+    "externalChartno": "X-DEV-4003",
+    "name": "外院007",
+    "birthday": "1980-11-11",
+    "sex": "女",
+    "linkedPatientIds": [],
+    "category": "opd_case"
+  },
+  {
+    "patientId": "2f00ddd2-9e8f-59c8-a491-dc30d77b8dca",
+    "source": "external",
+    "externalChartno": "X-DEV-4004",
+    "name": "外院008",
+    "birthday": "1981-12-12",
+    "sex": "男",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "d70ab609-67d1-591b-8b5d-8b7b3ae8cf57",
+    "source": "external",
+    "externalChartno": "X-DEV-4005",
+    "name": "外院009",
+    "birthday": "1982-01-13",
+    "sex": "女",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "a1e40f35-57a4-5a0d-ba7b-ea4d37c48aab",
+    "source": "external",
+    "externalChartno": "X-DEV-4006",
+    "name": "外院010",
+    "birthday": "1983-02-14",
+    "sex": "男",
+    "linkedPatientIds": [],
+    "category": "opd_case"
+  },
+  {
+    "patientId": "e61772a8-1e26-5d01-9963-16db3d73add9",
+    "source": "external",
+    "externalChartno": "X-DEV-4007",
+    "name": "外院011",
+    "birthday": "1984-03-15",
+    "sex": "女",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "61879b8d-6105-5824-9e31-13b649a99920",
+    "source": "external",
+    "externalChartno": "X-DEV-4008",
+    "name": "外院012",
+    "birthday": "1985-04-16",
+    "sex": "男",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "4f648c90-0e30-5f0a-a13c-84adc0a3a394",
+    "source": "external",
+    "externalChartno": "X-DEV-4009",
+    "name": "外院013",
+    "birthday": "1986-05-17",
+    "sex": "女",
+    "linkedPatientIds": [],
+    "category": "opd_case"
+  },
+  {
+    "patientId": "908e94ec-bbd2-5ec0-9e69-c8c08378b2c8",
+    "source": "external",
+    "externalChartno": "X-DEV-4010",
+    "name": "外院014",
+    "birthday": "1987-06-18",
+    "sex": "男",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "61f58cf0-ceff-578e-9c70-ad597607f8da",
+    "source": "external",
+    "externalChartno": "X-DEV-4011",
+    "name": "外院015",
+    "birthday": "1988-07-19",
+    "sex": "女",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "765c58ea-3b0c-5fb0-9873-ab66de75620f",
+    "source": "external",
+    "externalChartno": "X-DEV-4012",
+    "name": "外院016",
+    "birthday": "1989-08-20",
+    "sex": "男",
+    "linkedPatientIds": [],
+    "category": "opd_case"
+  },
+  {
+    "patientId": "eac63174-40ef-5e8f-90e2-baa6dbe672cf",
+    "source": "external",
+    "externalChartno": "X-DEV-4013",
+    "name": "外院017",
+    "birthday": "1990-09-21",
+    "sex": "女",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "da19ae82-051b-5caf-ad95-413b724821ca",
+    "source": "external",
+    "externalChartno": "X-DEV-4014",
+    "name": "外院018",
+    "birthday": "1991-10-22",
+    "sex": "男",
+    "linkedPatientIds": []
   }
 ]
