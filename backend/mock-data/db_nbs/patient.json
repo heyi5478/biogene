@@ -48,5 +48,105 @@
     "sex": "男",
     "category": "nbs",
     "linkedPatientIds": []
+  },
+  {
+    "patientId": "47bb1240-c0f6-5da2-bd0f-131bed5345c6",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0006",
+    "name": "新篩嬰006",
+    "birthday": "2025-01-01",
+    "sex": "男",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "8b44fc60-1d10-5870-93cc-64c078759e37",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0007",
+    "name": "新篩嬰007",
+    "birthday": "2025-02-02",
+    "sex": "女",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "7f77c208-66b5-596c-9187-2b41d4891678",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0008",
+    "name": "新篩嬰008",
+    "birthday": "2025-03-03",
+    "sex": "男",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "88c004dd-e49e-5582-b205-80291dbe08b3",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0009",
+    "name": "新篩嬰009",
+    "birthday": "2025-04-04",
+    "sex": "女",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "43078840-b5f7-5a0a-b8cb-f375ccec3a84",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0010",
+    "name": "新篩嬰010",
+    "birthday": "2025-05-05",
+    "sex": "男",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "021526fa-7a5a-57ad-86fa-1bc0320a403c",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0011",
+    "name": "新篩嬰011",
+    "birthday": "2025-06-06",
+    "sex": "女",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "5cf65e3d-1bac-5afd-9458-5d134b6261c2",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0012",
+    "name": "新篩嬰012",
+    "birthday": "2025-07-07",
+    "sex": "男",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "6e4ab3aa-c601-5282-8cff-c33835951144",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0013",
+    "name": "新篩嬰013",
+    "birthday": "2025-08-08",
+    "sex": "女",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "205e06e0-702a-557c-9b17-d044cdcf35fa",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0014",
+    "name": "新篩嬰014",
+    "birthday": "2025-09-09",
+    "sex": "男",
+    "category": "nbs",
+    "linkedPatientIds": []
+  },
+  {
+    "patientId": "617677f2-a6f3-5764-a5c4-2f468c49d3bc",
+    "source": "nbs",
+    "nbsId": "NBS-2025-0015",
+    "name": "新篩嬰015",
+    "birthday": "2025-10-10",
+    "sex": "女",
+    "category": "nbs",
+    "linkedPatientIds": []
   }
 ]

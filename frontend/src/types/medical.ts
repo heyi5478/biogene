@@ -2,6 +2,8 @@ export type {
   Patient,
   PatientBase,
   PatientListItem,
+  Page,
+  PatientListPage,
   PatientSource,
   OpdRecord,
   AaSample,

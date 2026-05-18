@@ -28,25 +28,65 @@ class ListPatientsQTest(_AppFixture):
     def test_list_no_q_returns_all(self) -> None:
         r = self.client.get("/patients")
         self.assertEqual(r.status_code, 200)
-        self.assertGreaterEqual(len(r.json()), 13)
+        body = r.json()
+        self.assertGreaterEqual(body["total"], 13)
+        self.assertEqual(body["limit"], 50)
+        self.assertEqual(body["offset"], 0)
+        self.assertEqual(len(body["items"]), min(body["total"], 50))
 
     def test_list_q_matches_name_substring(self) -> None:
         # Anchor patient has name "陳志明"; expect at least the "陳" substring hit.
         r = self.client.get("/patients", params={"q": "陳"})
         self.assertEqual(r.status_code, 200)
-        ids = [p["patientId"] for p in r.json()]
+        body = r.json()
+        ids = [p["patientId"] for p in body["items"]]
         self.assertIn("4e645243-fe58-5f74-b0bf-4271b5fdc0bf", ids)
+        self.assertGreaterEqual(body["total"], 1)
 
     def test_list_q_matches_chartno_case_insensitive(self) -> None:
         r = self.client.get("/patients", params={"q": "a12"})
         self.assertEqual(r.status_code, 200)
-        ids = [p["patientId"] for p in r.json()]
+        body = r.json()
+        ids = [p["patientId"] for p in body["items"]]
         self.assertIn("4e645243-fe58-5f74-b0bf-4271b5fdc0bf", ids)
 
     def test_list_q_no_match_returns_empty(self) -> None:
         r = self.client.get("/patients", params={"q": "zzzz_no_match"})
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json(), [])
+        body = r.json()
+        self.assertEqual(body["items"], [])
+        self.assertEqual(body["total"], 0)
+
+
+class ListPatientsPagingTest(_AppFixture):
+    def test_limit_and_offset_slice_the_page(self) -> None:
+        r = self.client.get("/patients", params={"limit": 5, "offset": 0})
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertEqual(len(body["items"]), 5)
+        self.assertEqual(body["limit"], 5)
+        self.assertEqual(body["offset"], 0)
+
+    def test_total_is_stable_across_pages(self) -> None:
+        page1 = self.client.get("/patients", params={"limit": 5, "offset": 0}).json()
+        page2 = self.client.get("/patients", params={"limit": 5, "offset": 5}).json()
+        self.assertEqual(page1["total"], page2["total"])
+        # Adjacent pages must not overlap.
+        ids1 = {p["patientId"] for p in page1["items"]}
+        ids2 = {p["patientId"] for p in page2["items"]}
+        self.assertEqual(ids1 & ids2, set())
+
+    def test_offset_past_end_returns_empty_page(self) -> None:
+        r = self.client.get("/patients", params={"limit": 50, "offset": 999999})
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertEqual(body["items"], [])
+        self.assertGreaterEqual(body["total"], 13)
+
+    def test_invalid_pagination_params_are_rejected(self) -> None:
+        for params in ({"limit": 0}, {"limit": 999}, {"offset": -1}):
+            r = self.client.get("/patients", params=params)
+            self.assertEqual(r.status_code, 422, params)
 
 
 class ConditionMatchTest(_AppFixture):

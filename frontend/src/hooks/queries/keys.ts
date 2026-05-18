@@ -2,7 +2,8 @@ import type { ConditionRequest } from '@/services/patients';
 
 export const queryKeys = {
   patients: {
-    list: (q?: string) => ['patients', 'list', q ?? ''] as const,
+    list: (q?: string, page?: number) =>
+      ['patients', 'list', q ?? '', page ?? 1] as const,
     condition: (req: ConditionRequest) =>
       ['patients', 'condition', req] as const,
     detail: (patientId: string | undefined) =>

@@ -13,7 +13,7 @@ from collections import defaultdict
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -29,6 +29,7 @@ from shared.schemas import (
     ConditionRequest,
     OpdBundle,
     Patient,
+    PatientPage,
 )
 
 log = configure_logging("svc-patient")
@@ -85,29 +86,41 @@ def healthz() -> dict:
     return {"status": "ok", "service": "svc-patient"}
 
 
-@app.get("/patients", response_model=list[Patient])
-def list_patients(q: str | None = None) -> list[dict]:
-    """Return patient base rows, optionally filtered by ``q``.
+@app.get("/patients", response_model=PatientPage)
+def list_patients(
+    q: str | None = None,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> dict:
+    """Return a page of patient base rows, optionally filtered by ``q``.
 
     Mirrors ``frontend/src/pages/Index.tsx:81-91``: ``name`` matches by
     case-sensitive substring; ``chartno``/``externalChartno``/``nbsId``
-    match by case-insensitive substring.
+    match by case-insensitive substring. The ``q`` filter is applied
+    before the page slice, so ``total`` is the full filtered count.
     """
     if q is None or q == "":
-        return _patients_list
-    q_lower = q.lower()
-    out: list[dict] = []
-    for p in _patients_list:
-        name = p.get("name") or ""
-        if q in name:
-            out.append(p)
-            continue
-        for key in ("chartno", "externalChartno", "nbsId"):
-            v = p.get(key)
-            if v and q_lower in v.lower():
-                out.append(p)
-                break
-    return out
+        filtered: list[dict] = _patients_list
+    else:
+        q_lower = q.lower()
+        filtered = []
+        for p in _patients_list:
+            name = p.get("name") or ""
+            if q in name:
+                filtered.append(p)
+                continue
+            for key in ("chartno", "externalChartno", "nbsId"):
+                v = p.get(key)
+                if v and q_lower in v.lower():
+                    filtered.append(p)
+                    break
+    total = len(filtered)
+    return {
+        "items": filtered[offset : offset + limit],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @app.post("/patients/condition-match", response_model=ConditionMatchResponse)
@@ -171,6 +184,22 @@ def batch_opd(req: _BatchRequest) -> dict[str, dict[str, list[dict]]]:
     """
 
     return {pid: _opd_bundle_for(pid) for pid in req.patientIds}
+
+
+@app.post("/patients/batch", response_model=dict[str, Patient])
+def batch_patients(req: _BatchRequest) -> dict[str, dict]:
+    """Return ``{patientId: Patient}`` for every requested id that exists.
+
+    Unknown ids are omitted — a ``Patient`` has required fields, so no
+    placeholder row is possible. Lets the gateway resolve a known set of
+    patients' base rows without fetching the whole table.
+    """
+
+    return {
+        pid: _patients_by_id[pid]
+        for pid in req.patientIds
+        if pid in _patients_by_id
+    }
 
 
 # FastAPI's default HTTPException handler wraps `detail` under {"detail": ...}.
