@@ -13,11 +13,13 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { FilterPanel, QueryMode } from '@/components/FilterPanel';
 import { PatientSummary } from '@/components/PatientSummary';
 import { PatientList } from '@/components/PatientList';
+import { PatientListPager } from '@/components/PatientListPager';
 import { PatientActions } from '@/components/PatientActions';
 import { SearchSummary } from '@/components/SearchSummary';
 import { ResultModules } from '@/components/ResultModules';
 import { ConditionResults } from '@/components/ConditionResults';
 import { usePatients, useConditionPatients } from '@/hooks/queries/usePatients';
+import { PATIENT_PAGE_SIZE } from '@/services/patients';
 import { usePatient } from '@/hooks/queries/usePatient';
 import { ModuleId, ConditionRow, ConditionLogic } from '@/types/medical';
 
@@ -61,6 +63,7 @@ const Index = () => {
   // Patient query state
   const [searchQuery, setSearchQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
+  const [page, setPage] = useState(1);
   const [selectedModules, setSelectedModules] = useState<ModuleId[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
     null,
@@ -76,8 +79,11 @@ const Index = () => {
   );
 
   // Server-driven patient search — runs only after the user submits a query.
-  const patientsQuery = usePatients(submittedQuery);
-  const results = submittedQuery ? (patientsQuery.data ?? []) : [];
+  const patientsQuery = usePatients(submittedQuery, page);
+  const patientsPage = submittedQuery ? patientsQuery.data : undefined;
+  const results = patientsPage?.items ?? [];
+  const total = patientsPage?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PATIENT_PAGE_SIZE));
 
   // Server-driven condition search — gated until the user submits.
   const conditionRequest = useMemo(
@@ -92,14 +98,22 @@ const Index = () => {
     ? (conditionQuery.data ?? [])
     : [];
 
-  // Patient mode: auto-select when the text search returns exactly one row.
+  // Patient mode: auto-select when the text search resolves to exactly one
+  // patient. Keyed on total (the full hit count), not the page length, and
+  // guarded against keepPreviousData placeholder so a stale page from a
+  // prior search cannot select the wrong patient.
   // Condition mode keeps its pre-change UX (always shows the matched-list
   // table first; user clicks 查看 to drill into a single patient).
   useEffect(() => {
-    if (results.length === 1 && selectedPatientId === null) {
+    if (
+      total === 1 &&
+      !patientsQuery.isPlaceholderData &&
+      selectedPatientId === null &&
+      results.length === 1
+    ) {
       setSelectedPatientId(results[0].patientId);
     }
-  }, [results, selectedPatientId]);
+  }, [total, patientsQuery.isPlaceholderData, results, selectedPatientId]);
 
   // Detail bundle for the currently selected patient (either mode).
   const detailId = selectedPatientId ?? conditionPatientId ?? undefined;
@@ -131,12 +145,14 @@ const Index = () => {
     startSearchTransition(() => {
       setSubmittedQuery(searchQuery);
       setSelectedPatientId(null);
+      setPage(1);
     });
   }, [searchQuery]);
 
   const handleClearAll = useCallback(() => {
     setSearchQuery('');
     setSubmittedQuery('');
+    setPage(1);
     setSelectedModules([]);
     setSelectedPatientId(null);
     setActiveTab('all');
@@ -244,7 +260,7 @@ const Index = () => {
               {/* Search Summary */}
               <SearchSummary
                 query={submittedQuery}
-                patientCount={results.length}
+                patientCount={total}
                 selectedModules={selectedModules}
                 onRemoveModule={handleRemoveModule}
                 onClearAll={handleClearAll}
@@ -269,7 +285,7 @@ const Index = () => {
               )}
 
               {/* No results */}
-              {submittedQuery && results.length === 0 && (
+              {submittedQuery && total === 0 && (
                 <div className="flex h-[40vh] flex-col items-center justify-center text-center">
                   <h3 className="mb-1 text-base font-semibold text-foreground">
                     找不到符合條件的病人
@@ -282,18 +298,28 @@ const Index = () => {
 
               {/* Multiple patients */}
               {submittedQuery &&
-                results.length > 1 &&
+                total > 1 &&
                 selectedPatientId === null && (
-                  <PatientList
-                    patients={results}
-                    onSelect={setSelectedPatientId}
-                  />
+                  <>
+                    <PatientList
+                      patients={results}
+                      total={total}
+                      onSelect={setSelectedPatientId}
+                    />
+                    {pageCount > 1 && (
+                      <PatientListPager
+                        page={page}
+                        pageCount={pageCount}
+                        onPageChange={setPage}
+                      />
+                    )}
+                  </>
                 )}
 
               {/* Single / selected patient */}
               {selectedPatientId !== null && (
                 <>
-                  {results.length > 1 && (
+                  {total > 1 && (
                     <Button
                       variant="ghost"
                       size="sm"

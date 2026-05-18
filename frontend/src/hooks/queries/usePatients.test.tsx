@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
-import type { PatientListItem } from '@/types/patient';
+import type { PatientListItem, PatientListPage } from '@/types/patient';
 import { server } from '@/test/server';
 import { queryKeys } from './keys';
 import { usePatients, useConditionPatients } from './usePatients';
@@ -30,59 +30,78 @@ const stubItem = (id: string): PatientListItem => ({
   lastVisitDate: null,
 });
 
+const stubPage = (items: PatientListItem[]): PatientListPage => ({
+  items,
+  total: items.length,
+  limit: 50,
+  offset: 0,
+});
+
 describe('usePatients', () => {
-  it('goes loading → success and caches under queryKeys.patients.list("")', async () => {
+  it('goes loading → success and caches under queryKeys.patients.list(q, page)', async () => {
     server.use(
       http.get('http://localhost:8000/patients', () =>
-        HttpResponse.json([stubItem('p1')]),
+        HttpResponse.json(stubPage([stubItem('p1')])),
       ),
     );
     const { client, wrapper } = makeWrapper();
 
-    const { result } = renderHook(() => usePatients(), { wrapper });
+    const { result } = renderHook(() => usePatients('q1', 1), { wrapper });
 
     expect(result.current.isPending).toBe(true);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual([stubItem('p1')]);
+    expect(result.current.data?.items).toEqual([stubItem('p1')]);
 
-    const cached = client.getQueryData(queryKeys.patients.list());
-    expect(cached).toEqual([stubItem('p1')]);
+    const cached = client.getQueryData(queryKeys.patients.list('q1', 1));
+    expect(cached).toEqual(stubPage([stubItem('p1')]));
   });
 
-  it('forwards q to the request URL and keys distinctly per q', async () => {
+  it('issues no request until a non-empty query is submitted', () => {
+    const handler = vi.fn(() => HttpResponse.json(stubPage([])));
+    server.use(http.get('http://localhost:8000/patients', handler));
+    const { wrapper } = makeWrapper();
+
+    const { result } = renderHook(() => usePatients('', 1), { wrapper });
+
+    expect(result.current.status).toBe('pending');
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('forwards the page offset and keys distinctly per page', async () => {
     server.use(
       http.get('http://localhost:8000/patients', ({ request }) => {
-        const q = new URL(request.url).searchParams.get('q');
-        return HttpResponse.json(q ? [stubItem(`hit-${q}`)] : []);
+        const offset = new URL(request.url).searchParams.get('offset');
+        return HttpResponse.json(stubPage([stubItem(`hit-${offset}`)]));
       }),
     );
     const { client, wrapper } = makeWrapper();
 
-    const first = renderHook(() => usePatients('陳'), { wrapper });
+    const first = renderHook(() => usePatients('陳', 1), { wrapper });
     await waitFor(() => expect(first.result.current.isSuccess).toBe(true));
-    expect(first.result.current.data?.[0].patientId).toBe('hit-陳');
+    expect(first.result.current.data?.items[0].patientId).toBe('hit-0');
 
-    const second = renderHook(() => usePatients('A12'), { wrapper });
+    const second = renderHook(() => usePatients('陳', 2), { wrapper });
     await waitFor(() => expect(second.result.current.isSuccess).toBe(true));
-    expect(second.result.current.data?.[0].patientId).toBe('hit-A12');
+    expect(second.result.current.data?.items[0].patientId).toBe('hit-50');
 
-    expect(client.getQueryData(queryKeys.patients.list('陳'))).toBeDefined();
-    expect(client.getQueryData(queryKeys.patients.list('A12'))).toBeDefined();
-    expect(client.getQueryData(queryKeys.patients.list('陳'))).not.toEqual(
-      client.getQueryData(queryKeys.patients.list('A12')),
+    expect(client.getQueryData(queryKeys.patients.list('陳', 1))).toBeDefined();
+    expect(client.getQueryData(queryKeys.patients.list('陳', 2))).toBeDefined();
+    expect(client.getQueryData(queryKeys.patients.list('陳', 1))).not.toEqual(
+      client.getQueryData(queryKeys.patients.list('陳', 2)),
     );
   });
 
   it('does not refetch within the staleTime window', async () => {
-    const handler = vi.fn(() => HttpResponse.json([stubItem('p1')]));
+    const handler = vi.fn(() => HttpResponse.json(stubPage([stubItem('p1')])));
     server.use(http.get('http://localhost:8000/patients', handler));
     const { wrapper } = makeWrapper();
 
-    const first = renderHook(() => usePatients('q'), { wrapper });
+    const first = renderHook(() => usePatients('q', 1), { wrapper });
     await waitFor(() => expect(first.result.current.isSuccess).toBe(true));
     first.unmount();
 
-    const second = renderHook(() => usePatients('q'), { wrapper });
+    const second = renderHook(() => usePatients('q', 1), { wrapper });
     await waitFor(() => expect(second.result.current.isSuccess).toBe(true));
 
     expect(handler).toHaveBeenCalledTimes(1);

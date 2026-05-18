@@ -3,18 +3,20 @@ import type { PatientListItem } from '@/types/medical';
 
 interface PatientListProps {
   patients: PatientListItem[];
+  total?: number;
   onSelect: (patientId: string) => void;
 }
 
-export function PatientList({ patients, onSelect }: PatientListProps) {
+export function PatientList({ patients, total, onSelect }: PatientListProps) {
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">
-        找到 {patients.length} 位病人，請選擇：
+        找到 {total ?? patients.length} 位病人，請選擇：
       </p>
       {patients.map((p) => (
         <button
           key={p.patientId}
+          data-testid="patient-row"
           onClick={() => onSelect(p.patientId)}
           className="w-full rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-accent/50"
         >

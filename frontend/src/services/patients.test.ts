@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import type { Patient, PatientListItem } from '@/types/patient';
+import type {
+  Patient,
+  PatientListItem,
+  PatientListPage,
+} from '@/types/patient';
 import { server } from '@/test/server';
 import { ApiError } from '@/lib/api';
 import { fetchPatient, fetchPatients, searchByConditions } from './patients';
@@ -15,6 +19,11 @@ const makeListItem = (id: string): PatientListItem => ({
   outbankCount: 0,
   lastVisitDate: null,
 });
+
+const makePage = (
+  items: PatientListItem[],
+  total = items.length,
+): PatientListPage => ({ items, total, limit: 50, offset: 0 });
 
 const makePatient = (id: string): Patient => ({
   patientId: id,
@@ -43,35 +52,41 @@ const makePatient = (id: string): Patient => ({
 });
 
 describe('fetchPatients', () => {
-  it('returns slim patient list when no q is supplied', async () => {
-    const payload = [makeListItem('p1'), makeListItem('p2')];
+  it('requests the first page with limit/offset and omits q when empty', async () => {
+    const payload = makePage([makeListItem('p1'), makeListItem('p2')]);
+    let capturedUrl = '';
     server.use(
       http.get('http://localhost:8000/patients', ({ request }) => {
-        const q = new URL(request.url).searchParams.get('q');
-        // No q on the request URL — verifies the query string was omitted.
-        if (q === null) return HttpResponse.json(payload);
-        return HttpResponse.json([]);
+        capturedUrl = request.url;
+        return HttpResponse.json(payload);
       }),
     );
 
-    const result = await fetchPatients();
+    const result = await fetchPatients('', 1);
 
+    expect(capturedUrl).toContain('limit=50');
+    expect(capturedUrl).toContain('offset=0');
+    expect(capturedUrl).not.toContain('q=');
     expect(result).toEqual(payload);
   });
 
-  it('forwards q as URL-encoded query string', async () => {
+  it('forwards q URL-encoded and converts the page number to an offset', async () => {
+    let capturedUrl = '';
     server.use(
       http.get('http://localhost:8000/patients', ({ request }) => {
-        const q = new URL(request.url).searchParams.get('q');
-        if (q === '陳') return HttpResponse.json([makeListItem('陳-id')]);
-        return HttpResponse.json([]);
+        capturedUrl = request.url;
+        return HttpResponse.json(makePage([makeListItem('陳-id')], 120));
       }),
     );
 
-    const result = await fetchPatients('陳');
+    const result = await fetchPatients('陳', 3);
 
-    expect(result).toHaveLength(1);
-    expect(result[0].patientId).toBe('陳-id');
+    expect(capturedUrl).toContain(`q=${encodeURIComponent('陳')}`);
+    expect(capturedUrl).toContain('limit=50');
+    // Page 3 at page size 50 → offset 100.
+    expect(capturedUrl).toContain('offset=100');
+    expect(result.total).toBe(120);
+    expect(result.items[0].patientId).toBe('陳-id');
   });
 });
 

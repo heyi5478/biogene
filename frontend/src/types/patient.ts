@@ -47,6 +47,15 @@ export interface PatientListItem extends PatientBase {
   conditionHits?: string[];
 }
 
+export interface Page<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export type PatientListPage = Page<PatientListItem>;
+
 export interface OpdRecord {
   visitDate: string;
   sex: string;
