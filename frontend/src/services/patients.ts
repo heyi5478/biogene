@@ -1,9 +1,5 @@
 import { apiGet, apiPost } from '@/lib/api';
-import type {
-  Patient,
-  PatientListItem,
-  PatientListPage,
-} from '@/types/patient';
+import type { Patient, PatientListPage } from '@/types/patient';
 import type { ConditionRow, ConditionLogic } from '@/types/medical';
 
 export const PATIENT_PAGE_SIZE = 50;
@@ -33,6 +29,14 @@ export function fetchPatient(patientId: string): Promise<Patient> {
 
 export function searchByConditions(
   req: ConditionRequest,
-): Promise<PatientListItem[]> {
-  return apiPost<PatientListItem[]>('/patients/condition-query', req);
+  page: number,
+): Promise<PatientListPage> {
+  const params = new URLSearchParams({
+    limit: String(PATIENT_PAGE_SIZE),
+    offset: String((page - 1) * PATIENT_PAGE_SIZE),
+  });
+  return apiPost<PatientListPage>(
+    `/patients/condition-query?${params.toString()}`,
+    req,
+  );
 }

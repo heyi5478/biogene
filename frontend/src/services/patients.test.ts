@@ -125,37 +125,61 @@ describe('fetchPatient', () => {
 });
 
 describe('searchByConditions', () => {
-  it('POSTs the condition request to /patients/condition-query and returns slim items', async () => {
-    const payload = [
+  const req = {
+    conditions: [
+      {
+        id: 'c1',
+        moduleId: 'basic' as const,
+        fieldId: 'diagnosis',
+        operator: 'contains' as const,
+        value: 'Fabry',
+        value2: '',
+      },
+    ],
+    logic: 'AND' as const,
+  };
+
+  it('POSTs a paginated condition query and returns the page envelope', async () => {
+    const payload = makePage([
       { ...makeListItem('hit'), conditionHits: ['基本資料/主診斷=Fabry'] },
-    ];
+    ]);
     let capturedBody: unknown;
+    let capturedUrl = '';
     server.use(
       http.post(
         'http://localhost:8000/patients/condition-query',
         async ({ request }) => {
+          capturedUrl = request.url;
           capturedBody = await request.json();
           return HttpResponse.json(payload);
         },
       ),
     );
 
-    const req = {
-      conditions: [
-        {
-          id: 'c1',
-          moduleId: 'basic' as const,
-          fieldId: 'diagnosis',
-          operator: 'contains' as const,
-          value: 'Fabry',
-          value2: '',
-        },
-      ],
-      logic: 'AND' as const,
-    };
-    const result = await searchByConditions(req);
+    const result = await searchByConditions(req, 1);
 
-    expect(result).toEqual(payload);
+    expect(capturedUrl).toContain('limit=50');
+    expect(capturedUrl).toContain('offset=0');
     expect(capturedBody).toEqual(req);
+    expect(result).toEqual(payload);
+  });
+
+  it('converts the page number to an offset for later pages', async () => {
+    let capturedUrl = '';
+    server.use(
+      http.post(
+        'http://localhost:8000/patients/condition-query',
+        ({ request }) => {
+          capturedUrl = request.url;
+          return HttpResponse.json(makePage([makeListItem('hit')], 130));
+        },
+      ),
+    );
+
+    await searchByConditions(req, 3);
+
+    // Page 3 at page size 50 → offset 100.
+    expect(capturedUrl).toContain('offset=100');
+    expect(capturedUrl).toContain('limit=50');
   });
 });

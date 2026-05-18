@@ -110,14 +110,14 @@ describe('usePatients', () => {
 
 describe('useConditionPatients', () => {
   it('does not fire while enabled is false', () => {
-    const handler = vi.fn(() => HttpResponse.json([]));
+    const handler = vi.fn(() => HttpResponse.json(stubPage([])));
     server.use(
       http.post('http://localhost:8000/patients/condition-query', handler),
     );
     const { wrapper } = makeWrapper();
 
     const { result } = renderHook(
-      () => useConditionPatients({ conditions: [], logic: 'AND' }, false),
+      () => useConditionPatients({ conditions: [], logic: 'AND' }, 1, false),
       { wrapper },
     );
 
@@ -126,10 +126,10 @@ describe('useConditionPatients', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it('fires when enabled and returns the resolved list', async () => {
+  it('fires when enabled and returns the resolved page', async () => {
     server.use(
       http.post('http://localhost:8000/patients/condition-query', () =>
-        HttpResponse.json([stubItem('hit')]),
+        HttpResponse.json(stubPage([stubItem('hit')])),
       ),
     );
     const { wrapper } = makeWrapper();
@@ -150,12 +150,13 @@ describe('useConditionPatients', () => {
             ],
             logic: 'AND',
           },
+          1,
           true,
         ),
       { wrapper },
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual([stubItem('hit')]);
+    expect(result.current.data).toEqual(stubPage([stubItem('hit')]));
   });
 });

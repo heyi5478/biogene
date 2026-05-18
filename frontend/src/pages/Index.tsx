@@ -74,6 +74,7 @@ const Index = () => {
   const [conditions, setConditions] = useState<ConditionRow[]>([]);
   const [conditionLogic, setConditionLogic] = useState<ConditionLogic>('AND');
   const [conditionSubmitted, setConditionSubmitted] = useState(false);
+  const [conditionPage, setConditionPage] = useState(1);
   const [conditionPatientId, setConditionPatientId] = useState<string | null>(
     null,
   );
@@ -92,11 +93,18 @@ const Index = () => {
   );
   const conditionQuery = useConditionPatients(
     conditionRequest,
+    conditionPage,
     conditionSubmitted && conditions.length > 0,
   );
-  const conditionResults = conditionSubmitted
-    ? (conditionQuery.data ?? [])
-    : [];
+  const conditionPageData = conditionSubmitted
+    ? conditionQuery.data
+    : undefined;
+  const conditionResults = conditionPageData?.items ?? [];
+  const conditionTotal = conditionPageData?.total ?? 0;
+  const conditionPageCount = Math.max(
+    1,
+    Math.ceil(conditionTotal / PATIENT_PAGE_SIZE),
+  );
 
   // Patient mode: auto-select when the text search resolves to exactly one
   // patient. Keyed on total (the full hit count), not the page length, and
@@ -114,6 +122,12 @@ const Index = () => {
       setSelectedPatientId(results[0].patientId);
     }
   }, [total, patientsQuery.isPlaceholderData, results, selectedPatientId]);
+
+  // A condition or logic edit changes the request identity; reset to page 1
+  // so a stale deep page index can't outlive the result set it was valid for.
+  useEffect(() => {
+    setConditionPage(1);
+  }, [conditionRequest]);
 
   // Detail bundle for the currently selected patient (either mode).
   const detailId = selectedPatientId ?? conditionPatientId ?? undefined;
@@ -177,6 +191,7 @@ const Index = () => {
     startSearchTransition(() => {
       setConditionSubmitted(true);
       setConditionPatientId(null);
+      setConditionPage(1);
     });
   }, []);
 
@@ -184,6 +199,7 @@ const Index = () => {
     setConditions([]);
     setConditionSubmitted(false);
     setConditionPatientId(null);
+    setConditionPage(1);
   }, []);
 
   // Mode switch
@@ -399,6 +415,10 @@ const Index = () => {
                   conditions={conditions}
                   logic={conditionLogic}
                   matchedPatients={conditionResults}
+                  total={conditionTotal}
+                  page={conditionPage}
+                  pageCount={conditionPageCount}
+                  onPageChange={setConditionPage}
                   onSelectPatient={setConditionPatientId}
                 />
               )}
