@@ -325,6 +325,24 @@ class PatientListItem(Patient):
     conditionHits: list[str] | None = None
 
 
+class PatientPage(_Base):
+    """Paginated envelope returned by svc-patient's ``GET /patients``."""
+
+    items: list[Patient] = []
+    total: int = 0
+    limit: int = 50
+    offset: int = 0
+
+
+class PatientListPage(_Base):
+    """Paginated envelope returned by the gateway's ``GET /patients``."""
+
+    items: list[PatientListItem] = []
+    total: int = 0
+    limit: int = 50
+    offset: int = 0
+
+
 class ConditionRow(_Base):
     moduleId: str
     fieldId: str
@@ -373,6 +391,8 @@ __all__ = [
     "DiseaseBundle",
     "PatientBundle",
     "PatientListItem",
+    "PatientPage",
+    "PatientListPage",
     "ConditionRow",
     "ConditionRequest",
     "ConditionMatchResponse",
